@@ -40,6 +40,7 @@ module.exports = {
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
     'plugin:storybook/recommended',
+    'plugin:@eslint-community/eslint-comments/recommended',
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
@@ -159,6 +160,7 @@ module.exports = {
         rootDir: 'src',
       },
     ],
+    '@eslint-community/eslint-comments/no-unused-disable': ['error'],
     'react/display-name': ['off'],
     'react/react-in-jsx-scope': ['off'],
     'react/prop-types': ['off'],
