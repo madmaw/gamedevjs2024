@@ -8,6 +8,5 @@ export enum StackState {
 
 export type Layer = {
   readonly id: string,
-  readonly title: string,
   readonly Component: ComponentType,
 };

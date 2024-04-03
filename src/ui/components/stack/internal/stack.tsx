@@ -5,18 +5,14 @@ import {
   type PropsWithChildren,
   useCallback,
 } from 'react';
-import { UnstyledButton } from 'ui/components/button/unstyled';
 import { Column } from 'ui/components/layout';
 import {
   type Layer,
   StackState,
 } from 'ui/components/stack/types';
-import { Text } from 'ui/components/typography/text';
-import { Typography } from 'ui/components/typography/types';
 
 type CommonProps = {
   readonly stackState: StackState,
-  readonly requestBack: (layer: Layer) => void,
   readonly animationComplete: (layer: Layer) => void,
   readonly animationDurationMillis: number,
 };
@@ -132,22 +128,14 @@ type LayerComponentProps = { layer: Layer, depth: number } & CommonProps;
 
 function LayerComponent({
   layer,
-  requestBack,
   animationComplete,
   stackState,
   depth,
   animationDurationMillis,
 }: LayerComponentProps) {
   const {
-    title,
     Component,
   } = layer;
-  const requestBackOnLayer = useCallback(function () {
-    requestBack(layer);
-  }, [
-    requestBack,
-    layer,
-  ]);
 
   const animationCompleteOnLayer = useCallback(function () {
     animationComplete(layer);
@@ -163,11 +151,6 @@ function LayerComponent({
       layerDepth={depth}
       animationDurationMillis={animationDurationMillis}
     >
-      <UnstyledButton onClick={requestBackOnLayer}>
-        <Text type={Typography.Heading}>
-          {title}
-        </Text>
-      </UnstyledButton>
       <Component />
     </LayerContainer>
   );
@@ -175,7 +158,6 @@ function LayerComponent({
 
 export function Stack({
   layers,
-  requestBack,
   animationComplete,
   stackState,
   animationDurationMillis,
@@ -192,7 +174,6 @@ export function Stack({
             depth={layerDepth}
             layer={layer}
             stackState={stackState}
-            requestBack={requestBack}
             animationComplete={animationComplete}
             animationDurationMillis={animationDurationMillis}
           />

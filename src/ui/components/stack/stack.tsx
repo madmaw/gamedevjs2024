@@ -18,7 +18,6 @@ import {
 
 export type StackProps = {
   readonly layers: readonly Layer[],
-  readonly requestBack: (layer: Layer) => void,
   readonly animationDurationMillis: number,
 };
 
@@ -26,7 +25,6 @@ const presenter = new StackPresenter();
 
 function _Stack({
   layers,
-  requestBack,
   animationDurationMillis,
 }: StackProps) {
   const model = useMemo(function () {
@@ -80,7 +78,6 @@ function _Stack({
       stackState={model.stackState}
       animationDurationMillis={animationDurationMillis}
       animationComplete={animationComplete}
-      requestBack={requestBack}
     />
   );
 }

@@ -8,20 +8,32 @@ import {
   useCallback,
   useState,
 } from 'react';
-import { Column } from 'ui/components/layout';
+import {
+  Column,
+  Row,
+} from 'ui/components/layout';
 import { type StackProps } from 'ui/components/stack/internal/stack';
 import { Stack } from 'ui/components/stack/stack';
 import { type Layer } from 'ui/components/stack/types';
 import { Text } from 'ui/components/typography/text';
+import { Typography } from 'ui/components/typography/types';
 
 function Panel({
   index,
-}: { index: number }) {
+  requestBack,
+}: { index: number, requestBack: () => void }) {
   return (
-    <Text>
-      index:&nbsp;
-      {index}
-    </Text>
+    <Row gap={1}>
+      <button onClick={requestBack}>
+        <Text>
+          &lt; Back
+        </Text>
+      </button>
+      <Text type={Typography.Heading}>
+        index:&nbsp;
+        {index}
+      </Text>
+    </Row>
   );
 }
 
@@ -54,6 +66,7 @@ function InteractiveStack({
           title: `Layer ${prev.length}`,
           Component: createPartialComponent(Panel, {
             index: prev.length,
+            requestBack,
           }),
         },
       ];
@@ -70,7 +83,6 @@ function InteractiveStack({
         <Stack
           animationDurationMillis={animationDurationMillis}
           layers={layers}
-          requestBack={requestBack}
         />
       </StackContainer>
       <button onClick={requestAdd}>
