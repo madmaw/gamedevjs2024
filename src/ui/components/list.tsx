@@ -1,8 +1,9 @@
 import styled from '@emotion/styled';
+import { type Key } from 'react';
 
 export type ListProps<T> = {
   items: readonly T[],
-  getKey: (item: T) => string,
+  getKey: (item: T) => Key,
   ListItem: React.ComponentType<T>,
 };
 

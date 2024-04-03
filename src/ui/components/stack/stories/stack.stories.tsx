@@ -71,7 +71,7 @@ function InteractiveStack({
         },
       ];
     });
-  }, []);
+  }, [requestBack]);
 
   const [
     layers,
