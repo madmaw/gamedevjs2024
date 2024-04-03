@@ -1,8 +1,6 @@
 import { UnreachableError } from 'base/unreachable_error';
-import {
-  comparer,
-  runInAction,
-} from 'mobx';
+import { comparer } from 'mobx';
+import { observer } from 'mobx-react';
 import {
   useCallback,
   useEffect,
@@ -26,7 +24,7 @@ export type StackProps = {
 
 const presenter = new StackPresenter();
 
-export function Stack({
+function _Stack({
   layers,
   requestBack,
   animationDurationMillis,
@@ -51,13 +49,9 @@ export function Stack({
         && comparer.shallow(previousLayers.slice(0, -1), layers)
       ) {
         // pop
-        presenter.animatePopLayer(model, layers[layers.length - 1], animationDurationMillis);
+        presenter.animatePopLayer(model, previousLayers[previousLayers.length - 1], animationDurationMillis);
       } else {
-        // reset
-        runInAction(function () {
-          model.layers = [...layers];
-          presenter.stabilizeStack(model, layers[layers.length - 1]);
-        });
+        presenter.resetLayers(model, layers);
       }
     }
   }, [
@@ -90,3 +84,5 @@ export function Stack({
     />
   );
 }
+
+export const Stack = observer(_Stack);

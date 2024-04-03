@@ -6,14 +6,8 @@ export enum StackState {
   AnimatingOut = 3,
 }
 
-export enum LayerBehavior {
-  Background = 1,
-  Displaced,
-}
-
 export type Layer = {
   readonly id: string,
   readonly title: string,
   readonly Component: ComponentType,
-  readonly behavior: LayerBehavior,
 };

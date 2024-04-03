@@ -8,60 +8,60 @@ import {
 export const metrics: Record<Size, Metrics> = {
   [Size.Small]: {
     borderWidth: 1,
-    gridBaseline: 8,
+    gridBaseline: 2,
     strokeWidth: 1,
     typography: {
       [Typography.Body]: {
-        fontSize: 14,
-        lineHeight: 20,
+        fontSize: 4,
+        lineHeight: 6,
       },
       [Typography.Subheading]: {
-        fontSize: 16,
-        lineHeight: 24,
+        fontSize: 5,
+        lineHeight: 8,
       },
       [Typography.Heading]: {
-        fontSize: 24,
-        lineHeight: 32,
+        fontSize: 7,
+        lineHeight: 9,
       },
     },
     borderRadius: 4,
   },
   [Size.Medium]: {
     borderWidth: 1,
-    gridBaseline: 8,
+    gridBaseline: 2,
     strokeWidth: 1,
     typography: {
       [Typography.Body]: {
-        fontSize: 16,
-        lineHeight: 24,
+        fontSize: 6,
+        lineHeight: 9,
       },
       [Typography.Subheading]: {
-        fontSize: 20,
-        lineHeight: 28,
+        fontSize: 8,
+        lineHeight: 11,
       },
       [Typography.Heading]: {
-        fontSize: 32,
-        lineHeight: 40,
+        fontSize: 10,
+        lineHeight: 13,
       },
     },
     borderRadius: 8,
   },
   [Size.Large]: {
     borderWidth: 1,
-    gridBaseline: 8,
+    gridBaseline: 2,
     strokeWidth: 1,
     typography: {
       [Typography.Body]: {
-        fontSize: 18,
-        lineHeight: 28,
+        fontSize: 8,
+        lineHeight: 12,
       },
       [Typography.Subheading]: {
-        fontSize: 24,
-        lineHeight: 32,
+        fontSize: 11,
+        lineHeight: 15,
       },
       [Typography.Heading]: {
-        fontSize: 40,
-        lineHeight: 48,
+        fontSize: 14,
+        lineHeight: 18,
       },
     },
     borderRadius: 12,

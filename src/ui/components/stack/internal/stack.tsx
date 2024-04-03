@@ -1,10 +1,14 @@
 import { keyframes } from '@emotion/react';
 import styled from '@emotion/styled';
 import { UnreachableError } from 'base/unreachable_error';
-import { useCallback } from 'react';
+import {
+  type PropsWithChildren,
+  useCallback,
+} from 'react';
+import { UnstyledButton } from 'ui/components/button/unstyled';
+import { Column } from 'ui/components/layout';
 import {
   type Layer,
-  LayerBehavior,
   StackState,
 } from 'ui/components/stack/types';
 import { Text } from 'ui/components/typography/text';
@@ -17,51 +21,21 @@ type CommonProps = {
   readonly animationDurationMillis: number,
 };
 
-export type StackProps = {
+export type StackProps = PropsWithChildren<{
   readonly layers: readonly Layer[],
-} & CommonProps;
+} & CommonProps>;
 
 function computeStartingMarginLeft({
   stackState,
-  layerBehavior,
   layerDepth,
-}: { stackState: StackState, layerBehavior: LayerBehavior, layerDepth: number }): -1 | 0 | 1 {
+}: { stackState: StackState, layerDepth: number }): -1 | 0 | 1 {
   switch (stackState) {
     case StackState.Stable:
-      switch (layerBehavior) {
-        case LayerBehavior.Background:
-          return 0;
-        case LayerBehavior.Displaced:
-          return layerDepth === 0 ? 0 : -1;
-        default:
-          throw new UnreachableError(layerBehavior);
-      }
+      return layerDepth === 0 ? 0 : -1;
     case StackState.AnimatingIn:
-      if (layerDepth === 0) {
-        return 1;
-      } else {
-        switch (layerBehavior) {
-          case LayerBehavior.Background:
-            return 0;
-          case LayerBehavior.Displaced:
-            return layerDepth === 1 ? 0 : -1;
-          default:
-            throw new UnreachableError(layerBehavior);
-        }
-      }
+      return layerDepth === 0 ? 1 : layerDepth === 1 ? 0 : -1;
     case StackState.AnimatingOut:
-      if (layerDepth === 0) {
-        return 0;
-      } else {
-        switch (layerBehavior) {
-          case LayerBehavior.Background:
-            return 0;
-          case LayerBehavior.Displaced:
-            return -1;
-          default:
-            throw new UnreachableError(layerBehavior);
-        }
-      }
+      return layerDepth === 0 ? 0 : -1;
     default:
       throw new UnreachableError(stackState);
   }
@@ -69,45 +43,15 @@ function computeStartingMarginLeft({
 
 function computeFinalMarginLeft({
   stackState,
-  layerBehavior,
   layerDepth,
-}: { stackState: StackState, layerBehavior: LayerBehavior, layerDepth: number }): -1 | 0 | 1 {
+}: { stackState: StackState, layerDepth: number }): -1 | 0 | 1 {
   switch (stackState) {
     case StackState.Stable:
-      switch (layerBehavior) {
-        case LayerBehavior.Background:
-          return 0;
-        case LayerBehavior.Displaced:
-          return layerDepth === 0 ? 0 : -1;
-        default:
-          throw new UnreachableError(layerBehavior);
-      }
+      return layerDepth === 0 ? 0 : -1;
     case StackState.AnimatingIn:
-      if (layerDepth === 0) {
-        return 0;
-      } else {
-        switch (layerBehavior) {
-          case LayerBehavior.Background:
-            return 0;
-          case LayerBehavior.Displaced:
-            return -1;
-          default:
-            throw new UnreachableError(layerBehavior);
-        }
-      }
+      return layerDepth === 0 ? 0 : -1;
     case StackState.AnimatingOut:
-      if (layerDepth === 0) {
-        return 1;
-      } else {
-        switch (layerBehavior) {
-          case LayerBehavior.Background:
-            return 0;
-          case LayerBehavior.Displaced:
-            return layerDepth === -1 ? 0 : -1;
-          default:
-            throw new UnreachableError(layerBehavior);
-        }
-      }
+      return layerDepth === 0 ? 1 : layerDepth === 1 ? 0 : -1;
     default:
       throw new UnreachableError(stackState);
   }
@@ -117,6 +61,7 @@ const Container = styled.div`
   position: relative;
   width: 100%;
   height: 100%;
+  overflow: hidden;
 `;
 
 const layer0To1 = keyframes`
@@ -155,8 +100,7 @@ const layerNeg1To0 = keyframes`
   }
 `;
 
-const LayerContainer = styled.div<{
-  layerBehavior: LayerBehavior,
+const LayerContainer = styled(Column)<{
   stackState: StackState,
   layerDepth: number,
   animationDurationMillis: number,
@@ -166,7 +110,8 @@ const LayerContainer = styled.div<{
   width: 100%;
   height: 100%;
   transform: translateX(${(props) => computeStartingMarginLeft(props) * 100}%);
-  animation: ${(props) => {
+  animation: 
+  ${(props) => {
   const startingMarginLeft = computeStartingMarginLeft(props);
   const finalMarginLeft = computeFinalMarginLeft(props);
   return startingMarginLeft === -1 && finalMarginLeft === 0 ? layerNeg1To0 : (
@@ -178,7 +123,9 @@ const LayerContainer = styled.div<{
       )
     )
   );
-}} ${({ animationDurationMillis }) => animationDurationMillis}ms ease-in-out;
+}}
+  ${({ animationDurationMillis }) => animationDurationMillis}ms
+  ease-out forwards;
 `;
 
 type LayerComponentProps = { layer: Layer, depth: number } & CommonProps;
@@ -194,7 +141,6 @@ function LayerComponent({
   const {
     title,
     Component,
-    behavior,
   } = layer;
   const requestBackOnLayer = useCallback(function () {
     requestBack(layer);
@@ -209,17 +155,19 @@ function LayerComponent({
     animationComplete,
     layer,
   ]);
+
   return (
     <LayerContainer
-      onAnimationEnd={animationCompleteOnLayer}
-      layerBehavior={behavior}
+      onAnimationEnd={depth === 0 ? animationCompleteOnLayer : undefined}
       stackState={stackState}
       layerDepth={depth}
       animationDurationMillis={animationDurationMillis}
     >
-      <Text type={Typography.Heading}>
-        {title}
-      </Text>
+      <UnstyledButton onClick={requestBackOnLayer}>
+        <Text type={Typography.Heading}>
+          {title}
+        </Text>
+      </UnstyledButton>
       <Component />
     </LayerContainer>
   );
@@ -231,9 +179,11 @@ export function Stack({
   animationComplete,
   stackState,
   animationDurationMillis,
+  children,
 }: StackProps) {
   return (
     <Container>
+      {children}
       {layers.map(function (layer, index) {
         const layerDepth = layers.length - index - 1;
         return (

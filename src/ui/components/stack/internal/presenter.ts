@@ -44,6 +44,16 @@ export class StackPresenter {
       model.layers.pop();
     }
   }
+
+  @action
+  resetLayers(model: StackModel, layers: readonly Layer[]) {
+    model.layers = [...layers];
+    model.stackState = StackState.Stable;
+    model.layerTimeoutHandles.forEach(function (handle) {
+      window.clearTimeout(handle);
+    });
+    model.layerTimeoutHandles.clear();
+  }
 }
 
 export class StackModel {

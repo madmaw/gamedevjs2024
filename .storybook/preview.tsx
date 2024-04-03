@@ -22,6 +22,8 @@ import {
 const StoryContainer = styled.div`
   label: story-container;
   position: relative;
+  width: 100%;
+  height: 100%;
 `;
 
 const Container = styled.div<{ backgroundColor: Color }>`
