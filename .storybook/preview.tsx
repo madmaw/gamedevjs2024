@@ -1,10 +1,10 @@
 import styled from '@emotion/styled';
 import type { Preview } from '@storybook/react';
-import { metrics as defaultMetrics } from 'app/ui/metrics';
+import { metrics as defaultMetrics } from 'app/ui/metrics/metrics';
 import {
   darkTheme,
   lightTheme,
-} from 'app/ui/themes';
+} from 'app/ui/theme/themes';
 import { reverse } from 'base/record';
 import type Color from 'colorjs.io';
 import {

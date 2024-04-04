@@ -190,6 +190,12 @@ module.exports = {
       'warn',
       'tag-aligned',
     ],
+    'react-hooks/exhaustive-deps': [
+      'error',
+      {
+        additionalHooks: '(usePartialComponent|usePartialObserverComponent)',
+      },
+    ],
     '@typescript-eslint/consistent-type-imports': [
       'warn',
       {

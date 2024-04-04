@@ -5,7 +5,7 @@ import {
 } from 'react';
 import { List } from 'ui/components/list';
 
-export type MenuListItemProps<T extends MenuItem> = T & {
+export type MenuListItemProps<T extends MenuItem = MenuItem> = T & {
   onSelect: () => void,
 };
 

@@ -4,13 +4,15 @@ import {
   type PropsWithChildren,
   useMemo,
 } from 'react';
+import { Alignment } from 'ui/alignment';
+import { Aligner } from 'ui/components/aligner';
 import { CustomAsync as CustomAsyncImpl } from 'ui/components/async/custom';
 import {
   AlertIcon,
   SpinnerIcon,
 } from 'ui/components/icon/icons';
-import { Information } from 'ui/components/information';
 import { RenderChildren } from 'ui/components/render_children';
+import { Typography } from 'ui/components/typography/types';
 import { type AsyncStateType } from './types';
 
 export type GenericAsyncProps = PropsWithChildren<{
@@ -20,16 +22,20 @@ export type GenericAsyncProps = PropsWithChildren<{
 // note: has to be typed as FunctionComponent to convince
 // TS that it doesn't need an explicit { reason: void } prop
 const Failure: FunctionComponent = createPartialComponent(
-  Information,
+  Aligner,
   {
-    Icon: AlertIcon,
+    xAlignment: Alignment.Middle,
+    yAlignment: Alignment.Middle,
+    Icon: <AlertIcon type={Typography.Heading} />,
   },
 );
 
 const Loading: FunctionComponent = createPartialComponent(
-  Information,
+  Aligner,
   {
-    Icon: SpinnerIcon,
+    xAlignment: Alignment.Middle,
+    yAlignment: Alignment.Middle,
+    children: <SpinnerIcon type={Typography.Heading} />,
   },
 );
 

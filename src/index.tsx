@@ -1,5 +1,6 @@
 import { checkExists } from 'base/preconditions';
 import { createRoot } from 'react-dom/client';
+import { install as installApp } from './app/install';
 
 window.addEventListener('load', function () {
   const elementId = 'app';
@@ -7,13 +8,7 @@ window.addEventListener('load', function () {
   const app = createRoot(
     checkExists(appNode, 'element with id "{0}" not found', elementId),
   );
-  const App = function () {
-    return (
-      <div>
-        App
-      </div>
-    );
-  };
+  const App = installApp();
 
   app.render(
     <App />,

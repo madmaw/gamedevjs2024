@@ -16,6 +16,9 @@ export default defineConfig({
       ],
     }),
     react({
+      // babel: {
+      //   configFile: './.babelrc',
+      // },
       babel: {
         plugins: [
           'macros',

@@ -79,3 +79,17 @@ export function useMetrics(): Metrics {
   const size = checkExists(useContext(sizeContext), 'no size context set');
   return metrics[size];
 }
+
+// unused?
+// export function useSizedComponent<Props>(C: ComponentType<Props>, size: Size) {
+//   return useCallback(function (props: Props & JSX.IntrinsicAttributes) {
+//     return (
+//       <SizeProvider size={size}>
+//         <C {...props} />
+//       </SizeProvider>
+//     );
+//   }, [
+//     C,
+//     size,
+//   ]);
+// }

@@ -1,15 +1,14 @@
 import styled from '@emotion/styled';
-import { type ComponentType } from 'react';
+import { type PropsWithChildren } from 'react';
 import { UnstyledButton } from 'ui/components/button/unstyled';
 import { Column } from 'ui/components/layout';
 import { Text } from 'ui/components/typography/text';
 import { Typography } from 'ui/components/typography/types';
 
-export type ScreenProps = {
+export type ScreenProps = PropsWithChildren<{
   title: string,
-  Body: ComponentType,
   requestBack?: () => void,
-};
+}>;
 
 const ScreenContainer = styled(Column)`
   width: 100%;
@@ -22,8 +21,8 @@ const BodyContainer = styled.div`
 `;
 
 export function Screen({
+  children,
   title,
-  Body,
   requestBack,
 }: ScreenProps) {
   return (
@@ -44,7 +43,7 @@ export function Screen({
           </Text>
         )}
       <BodyContainer>
-        <Body />
+        {children}
       </BodyContainer>
     </ScreenContainer>
   );

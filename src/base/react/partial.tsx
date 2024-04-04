@@ -1,5 +1,9 @@
 import { observer } from 'mobx-react';
-import type { ComponentType } from 'react';
+import {
+  type ComponentType,
+  type DependencyList,
+  useMemo,
+} from 'react';
 
 export function createPartialComponent<
   ComponentProps,
@@ -20,6 +24,30 @@ export function createPartialComponent<
   };
 }
 
+export function usePartialComponent<
+  ComponentProps,
+  CurriedProps,
+>(
+  // has to be first so eslint react-hooks/exhaustive-deps can find the callback
+  // has to be a function so eslint react-hooks/exhaustive-deps can reason about it :(
+  createCurriedProps: () => CurriedProps,
+  // has to be next so eslint react-hooks/exhaustive-deps can find the deps
+  deps: DependencyList,
+  Component: ComponentType<ComponentProps>,
+) {
+  return useMemo(
+    function () {
+      return createPartialComponent(Component, createCurriedProps());
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      ...deps,
+      Component,
+    ],
+  );
+}
+
 export function createPartialObserverComponent<
   ComponentProps,
   CurriedProps,
@@ -38,6 +66,30 @@ export function createPartialObserverComponent<
       />
     );
   });
+}
+
+export function usePartialObserverComponent<
+  ComponentProps,
+  CurriedProps,
+  AdditionalProps = {},
+>(
+  // has to be first so eslint react-hooks/exhaustive-deps can find the callback
+  curriedPropsSource: (additionalProps: AdditionalProps) => CurriedProps,
+  // has to be next so eslint react-hooks/exhaustive-deps can find the deps
+  deps: DependencyList,
+  Component: ComponentType<ComponentProps>,
+) {
+  return useMemo(
+    function () {
+      return createPartialObserverComponent(Component, curriedPropsSource);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      ...deps,
+      Component,
+    ],
+  );
 }
 
 type RemainingComponentProps<ComponentProps, CurriedProps> =

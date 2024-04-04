@@ -1,10 +1,8 @@
 import styled from '@emotion/styled';
+import { Alignment } from 'ui/alignment';
 import { type Icon } from './icon/icons';
 import { Text } from './typography/text';
-import {
-  TextAlignment,
-  Typography,
-} from './typography/types';
+import { Typography } from './typography/types';
 
 export type InformationProps = {
   Icon?: Icon,
@@ -13,6 +11,7 @@ export type InformationProps = {
 };
 
 const Container = styled.div`
+  label: information;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -28,13 +27,13 @@ export function Information({
       {Icon && <Icon type={Typography.Heading} />}
       {heading && (
         <Text
-          alignment={TextAlignment.Middle}
+          alignment={Alignment.Middle}
           type={Typography.Heading}
         />
       )}
       {message && (
         <Text
-          alignment={TextAlignment.Middle}
+          alignment={Alignment.Middle}
           type={Typography.Body}
         >
           {message}
