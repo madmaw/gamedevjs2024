@@ -9,7 +9,13 @@ export const enum FontWeight {
 }
 
 export const enum Typography {
-  Heading,
+  Body = 1,
   Subheading,
-  Body,
+  Heading,
 }
+
+export const TYPOGRAPHIES = [
+  Typography.Body,
+  Typography.Subheading,
+  Typography.Heading,
+];

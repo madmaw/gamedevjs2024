@@ -21,6 +21,8 @@ export function install({
 }: {
   loggingService: LoggingService,
 }): LinguiWrapper {
+  const presenter = new LinguiPresenter(i18n, loggingService);
+
   return function ({
     loadMessages,
     locale,
@@ -29,16 +31,12 @@ export function install({
     const model = useMemo(function () {
       return new LinguiModel();
     }, []);
-    const presenter = useMemo(function () {
-      return new LinguiPresenter(i18n, loadMessages, loggingService);
-    }, [loadMessages]);
-
     useEffect(function () {
-      presenter.requestLoadLocale(model, locale);
+      presenter.requestLoadLocale(model, locale, loadMessages);
     }, [
       model,
-      presenter,
       locale,
+      loadMessages,
     ]);
 
     const ObserverAsync = usePartialObserverComponent(

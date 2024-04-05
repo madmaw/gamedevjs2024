@@ -2,6 +2,10 @@ import { msg } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
 import { Screen } from 'ui/components/screen';
 import {
+  Size,
+  SizeProvider,
+} from 'ui/metrics';
+import {
   HomeMenu,
   type HomeOptions,
 } from './menu';
@@ -13,9 +17,11 @@ export function install() {
   return function () {
     const { _ } = useLingui();
     return (
-      <Screen title={_(msg`Home`)}>
-        <HomeMenu onSelect={onSelect} />
-      </Screen>
+      <SizeProvider size={Size.Large}>
+        <Screen title={_(msg`Home`)}>
+          <HomeMenu onSelect={onSelect} />
+        </Screen>
+      </SizeProvider>
     );
   };
 }

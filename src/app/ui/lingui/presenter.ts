@@ -17,19 +17,18 @@ import {
 export class LinguiPresenter {
   constructor(
     private readonly i18n: I18n,
-    private readonly loadMessages: (locale: string) => Promise<Messages>,
     private readonly loggingService: LoggingService,
   ) {
   }
 
-  async requestLoadLocale(model: LinguiModel, locale: string) {
+  async requestLoadLocale(model: LinguiModel, locale: string, loadMessages: (locale: string) => Promise<Messages>) {
     model.pendingLocale = locale;
     try {
       if (![...(this.i18n.locales || [])].some(installedLocale => installedLocale === locale)) {
         runInAction(function () {
           model.type = AsyncStateType.Loading;
         });
-        const messages = await this.loadMessages(locale);
+        const messages = await loadMessages(locale);
         this.i18n.load(locale, messages);
       }
       if (locale === model.pendingLocale) {

@@ -1,6 +1,6 @@
 import styled from '@emotion/styled';
 import type { Preview } from '@storybook/react';
-import { metrics as defaultMetrics } from 'app/ui/metrics/metrics';
+import { metrics as defaultMetrics } from 'app/ui/metrics/base';
 import {
   darkTheme,
   lightTheme,

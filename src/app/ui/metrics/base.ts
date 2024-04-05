@@ -4,66 +4,65 @@ import {
   Size,
 } from 'ui/metrics';
 
-// TODO desktop and mobile metrics
-export const metrics: Record<Size, Metrics> = {
+export const comfortable: Record<Size, Metrics> = {
   [Size.Small]: {
     borderWidth: 1,
-    gridBaseline: 2,
+    gridBaseline: 8,
     strokeWidth: 1,
     typography: {
       [Typography.Body]: {
-        fontSize: 4,
-        lineHeight: 6,
+        fontSize: 18,
+        lineHeight: 20,
       },
       [Typography.Subheading]: {
-        fontSize: 5,
-        lineHeight: 8,
+        fontSize: 20,
+        lineHeight: 24,
       },
       [Typography.Heading]: {
-        fontSize: 7,
-        lineHeight: 9,
+        fontSize: 24,
+        lineHeight: 28,
+      },
+    },
+    borderRadius: 2,
+  },
+  [Size.Medium]: {
+    borderWidth: 1,
+    gridBaseline: 8,
+    strokeWidth: 1,
+    typography: {
+      [Typography.Body]: {
+        fontSize: 24,
+        lineHeight: 32,
+      },
+      [Typography.Subheading]: {
+        fontSize: 32,
+        lineHeight: 40,
+      },
+      [Typography.Heading]: {
+        fontSize: 40,
+        lineHeight: 48,
       },
     },
     borderRadius: 4,
   },
-  [Size.Medium]: {
+  [Size.Large]: {
     borderWidth: 1,
-    gridBaseline: 2,
+    gridBaseline: 8,
     strokeWidth: 1,
     typography: {
       [Typography.Body]: {
-        fontSize: 6,
-        lineHeight: 9,
+        fontSize: 40,
+        lineHeight: 48,
       },
       [Typography.Subheading]: {
-        fontSize: 8,
-        lineHeight: 11,
+        fontSize: 52,
+        lineHeight: 60,
       },
       [Typography.Heading]: {
-        fontSize: 10,
-        lineHeight: 13,
+        fontSize: 60,
+        lineHeight: 72,
       },
     },
     borderRadius: 8,
-  },
-  [Size.Large]: {
-    borderWidth: 1,
-    gridBaseline: 2,
-    strokeWidth: 1,
-    typography: {
-      [Typography.Body]: {
-        fontSize: 8,
-        lineHeight: 12,
-      },
-      [Typography.Subheading]: {
-        fontSize: 11,
-        lineHeight: 15,
-      },
-      [Typography.Heading]: {
-        fontSize: 14,
-        lineHeight: 18,
-      },
-    },
-    borderRadius: 12,
   },
 };

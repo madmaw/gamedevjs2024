@@ -26,7 +26,7 @@ export const _LinearLayout = styled.div<Omit<LinearLayoutProps, 'gap'> & {
   flex-direction: ${({ direction }) => direction};
   justify-content: ${({ alignment }) => alignment};
   align-items: ${({ crossAlignment }) => crossAlignment};
-  gap: ${({ gap }) => gap}vmin;
+  gap: ${({ gap }) => gap}px;
 `;
 
 export function LinearLayout(props:

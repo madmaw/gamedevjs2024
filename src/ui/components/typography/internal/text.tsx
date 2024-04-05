@@ -18,11 +18,12 @@ export type StyledTextProps = PropsWithChildren<{
 }>;
 
 export const StyledText = styled.span<StyledTextProps>`
+  label: text;
   font-family: ${({ fontFamily }) => fontFamily};
-  font-size: ${({ fontSize }) => fontSize}vmin;
+  font-size: ${({ fontSize }) => fontSize}px;
   font-style: ${({ fontStyle }) => fontStyle};
   font-weight: ${({ fontWeight }) => fontWeight};
-  line-height: ${({ lineHeight }) => lineHeight}vmin;
+  line-height: ${({ lineHeight }) => lineHeight}px;
   color: ${({ foreground }) => foreground.toString()};
   text-align: ${({ alignment }) => alignment};
 `;

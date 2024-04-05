@@ -23,6 +23,7 @@ module.exports = {
     '!.storybook',
     'dist',
     'node_modules',
+    '**/locales/**',
   ],
   plugins: [
     'dprint-integration',
