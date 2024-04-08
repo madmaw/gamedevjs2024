@@ -7,7 +7,7 @@ import {
 
 export function createPartialComponent<
   ComponentProps,
-  CurriedProps,
+  CurriedProps extends Partial<ComponentProps>,
 >(
   Component: ComponentType<ComponentProps>,
   curriedProps: CurriedProps,
@@ -26,7 +26,7 @@ export function createPartialComponent<
 
 export function usePartialComponent<
   ComponentProps,
-  CurriedProps,
+  CurriedProps extends Partial<ComponentProps>,
 >(
   // has to be first so eslint react-hooks/exhaustive-deps can find the callback
   // has to be a function so eslint react-hooks/exhaustive-deps can reason about it :(
@@ -50,7 +50,7 @@ export function usePartialComponent<
 
 export function createPartialObserverComponent<
   ComponentProps,
-  CurriedProps,
+  CurriedProps extends Partial<ComponentProps>,
   AdditionalProps = {},
 >(
   Component: ComponentType<ComponentProps>,
@@ -70,7 +70,7 @@ export function createPartialObserverComponent<
 
 export function usePartialObserverComponent<
   ComponentProps,
-  CurriedProps,
+  CurriedProps extends Partial<ComponentProps>,
   AdditionalProps = {},
 >(
   // has to be first so eslint react-hooks/exhaustive-deps can find the callback
