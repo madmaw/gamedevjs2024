@@ -1,60 +1,61 @@
 import { i18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
-import { type LoggingService } from 'app/services/logging';
-import { usePartialObserverComponent } from 'base/react/partial';
 import {
+  type PropsWithChildren,
   useEffect,
   useMemo,
 } from 'react';
-import { GenericAsync } from 'ui/components/async/generic';
 import {
   LinguiModel,
   LinguiPresenter,
 } from './presenter';
 import {
-  type LinguiWrapper,
-  type LinguiWrapperProps,
+  type LinguiLoader,
+  type LinguiLoaderProps,
 } from './types';
 
-export function install({
-  loggingService,
-}: {
-  loggingService: LoggingService,
-}): LinguiWrapper {
-  const presenter = new LinguiPresenter(i18n, loggingService);
+export function install(): {
+  LinguiLoader: LinguiLoader,
+  LinguiProvider: React.ComponentType<PropsWithChildren>,
+} {
+  const presenter = new LinguiPresenter(i18n);
 
-  return function ({
+  function LinguiLoader({
     loadMessages,
     locale,
     children,
-  }: LinguiWrapperProps) {
+    asyncController,
+  }: LinguiLoaderProps) {
     const model = useMemo(function () {
       return new LinguiModel();
     }, []);
     useEffect(function () {
-      presenter.requestLoadLocale(model, locale, loadMessages);
+      asyncController.append(function () {
+        return presenter.requestLoadLocale(model, locale, loadMessages);
+      });
     }, [
       model,
       locale,
       loadMessages,
+      asyncController,
     ]);
-
-    const ObserverAsync = usePartialObserverComponent(
-      function () {
-        return {
-          state: model.state,
-        };
-      },
-      [model],
-      GenericAsync,
-    );
-
     return (
-      <ObserverAsync>
-        <I18nProvider i18n={i18n}>
-          {children}
-        </I18nProvider>
-      </ObserverAsync>
+      <>
+        {children}
+      </>
     );
+  }
+  function LinguiProvider({ children }: PropsWithChildren) {
+    return (
+      <I18nProvider
+        i18n={i18n}
+      >
+        {children}
+      </I18nProvider>
+    );
+  }
+  return {
+    LinguiLoader,
+    LinguiProvider,
   };
 }

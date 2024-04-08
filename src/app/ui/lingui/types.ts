@@ -1,14 +1,14 @@
 import { type Messages } from '@lingui/core';
+import { type AsyncController } from 'app/ui/async/controller';
 import {
   type ComponentType,
   type PropsWithChildren,
 } from 'react';
-import { type GenericAsyncProps } from 'ui/components/async/generic';
 
-export type LinguiWrapperProps = PropsWithChildren<{
+export type LinguiLoaderProps = PropsWithChildren<{
   loadMessages: (locale: string) => Promise<Messages>,
+  asyncController: AsyncController,
   locale: string,
-  Async: ComponentType<GenericAsyncProps>,
 }>;
 
-export type LinguiWrapper = ComponentType<LinguiWrapperProps>;
+export type LinguiLoader = ComponentType<LinguiLoaderProps>;

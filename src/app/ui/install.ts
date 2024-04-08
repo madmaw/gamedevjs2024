@@ -1,15 +1,18 @@
-import { type LoggingService } from 'app/services/logging';
 import { install as installLingUI } from './lingui/install';
 import { install as installMetrics } from './metrics/install';
 import { install as installTheme } from './theme/install';
 
-export function install({ loggingService }: { loggingService: LoggingService }) {
+export function install() {
   const ThemeContextProvider = installTheme();
   const MetricsContextProvider = installMetrics();
-  const LingUIContextProvider = installLingUI({ loggingService });
+  const {
+    LinguiProvider,
+    LinguiLoader,
+  } = installLingUI();
   return {
     ThemeContextProvider,
     MetricsContextProvider,
-    LingUIContextProvider,
+    LinguiProvider,
+    LinguiLoader,
   };
 }
