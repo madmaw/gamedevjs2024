@@ -1,43 +1,58 @@
 import { delay } from 'base/delay';
-import { usePartialObserverComponent } from 'base/react/partial';
-import {
-  useMemo,
-  useState,
-} from 'react';
+import { createPartialObserverComponent } from 'base/react/partial';
+import { useMemo } from 'react';
 import { GenericAsync } from 'ui/components/async/generic';
 import { Stack } from 'ui/components/stack/stack';
-import { type Layer } from 'ui/components/stack/types';
 import {
   Size,
   SizeProvider,
 } from 'ui/metrics';
-import { install as installHome } from './home/install';
+import { install as installHome } from './pages/home/install';
+import { install as installPlay } from './pages/play/install';
 import { install as installServices } from './services/install';
-import {
-  type AsyncController,
-  type AsyncTask,
-} from './ui/async/controller';
 import {
   AsyncModel,
   AsyncPresenter,
 } from './ui/async/presenter';
+import { install as installDetectorInitializer } from './ui/detector/install';
 import { install as installUI } from './ui/install';
 import { Display } from './ui/metrics/types';
+import {
+  StackModel,
+  StackPresenter,
+} from './ui/stack/presenter';
 import { Themes } from './ui/theme/types';
+import { install as installWebcamInitializer } from './ui/webcam/install';
 
 export function install() {
   const services = installServices({
     fake: true,
   });
 
-  const { loggingService } = services;
+  const {
+    loggingService,
+    detectorService,
+  } = services;
+
+  const DetectorInitializer = installDetectorInitializer({
+    detectorService,
+  });
+
+  const WebcamInitializer = installWebcamInitializer();
+
   const {
     ThemeContextProvider,
     MetricsContextProvider,
     LinguiProvider,
     LinguiLoader,
   } = installUI();
-  const Home = installHome();
+  const Play = installPlay({
+    DetectorInitializer,
+    WebcamInitializer,
+  });
+  const Home = installHome({
+    Play,
+  });
   async function loadMessages(locale: string) {
     const [messages] = await Promise.all([
       import(`./locales/${locale}.po`),
@@ -47,37 +62,46 @@ export function install() {
     return messages;
   }
 
-  const asyncPresenter = new AsyncPresenter();
+  const asyncPresenter = new AsyncPresenter<void>();
+  const stackPresenter = new StackPresenter(loggingService);
 
   return function () {
-    const [
-      layers,
-      setLayers,
-    ] = useState<readonly Layer[]>([
-      {
+    const [ObservingStack] = useMemo(function () {
+      // hoist stackController
+      function HomeLayerComponent() {
+        return <Home stackController={stackController} />;
+      }
+      const stackModel = new StackModel({
         id: 'home',
-        Component: Home,
-      },
-    ]);
-
-    const asyncModel = useMemo(function () {
-      return new AsyncModel();
+        Component: HomeLayerComponent,
+      });
+      const stackController = stackPresenter.createController(stackModel);
+      const ObservingStack = createPartialObserverComponent(Stack, function () {
+        return {
+          layers: stackModel.layers,
+        };
+      });
+      return [ObservingStack] as const;
     }, []);
-    const asyncController = useMemo<AsyncController>(function () {
-      return {
-        append: function<T,> (task: AsyncTask<T>) {
-          return asyncPresenter.append<T>(asyncModel, task);
-        },
-      };
-    }, [asyncModel]);
 
-    const ObservingGenericAsync = usePartialObserverComponent(function () {
-      return {
-        state: {
-          type: asyncModel.type,
-        },
-      };
-    }, [asyncModel], GenericAsync);
+    const [
+      asyncController,
+      ObservingGenericAsync,
+    ] = useMemo(function () {
+      const asyncModel = new AsyncModel<void>(undefined);
+      const asyncController = asyncPresenter.createController(asyncModel);
+      const ObservingGenericAsync = createPartialObserverComponent(GenericAsync, function () {
+        return {
+          state: {
+            type: asyncModel.type,
+          },
+        };
+      });
+      return [
+        asyncController,
+        ObservingGenericAsync,
+      ] as const;
+    }, []);
 
     return (
       <SizeProvider size={Size.Large}>
@@ -91,8 +115,7 @@ export function install() {
               <ObservingGenericAsync>
                 <LinguiProvider>
                   <SizeProvider size={Size.Medium}>
-                    <Stack
-                      layers={layers}
+                    <ObservingStack
                       animationDurationMillis={300}
                     />
                   </SizeProvider>

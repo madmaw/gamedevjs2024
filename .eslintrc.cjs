@@ -24,6 +24,7 @@ module.exports = {
     'dist',
     'node_modules',
     '**/locales/**',
+    'public/**',
   ],
   plugins: [
     'dprint-integration',

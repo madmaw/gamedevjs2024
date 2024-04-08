@@ -4,34 +4,61 @@ import {
   runInAction,
 } from 'mobx';
 import { AsyncStateType } from 'ui/components/async/types';
-import { type AsyncTask } from './controller';
+import {
+  type AsyncController,
+  type AsyncTask,
+} from './controller';
 
-export class AsyncPresenter {
+export class AsyncPresenter<V> {
   constructor() {
   }
 
-  async append<T>(model: AsyncModel, task: AsyncTask<T>): Promise<T> {
+  async append<T>(
+    model: AsyncModel<V>,
+    task: AsyncTask<T>,
+    combiner?: (value: V, result: T) => V,
+  ): Promise<T> {
     try {
       runInAction(function () {
         model.forceLoading = false;
         model.pendingTaskCount++;
       });
-      return await task();
+      const result = await task();
+      runInAction(function () {
+        model.pendingTaskCount--;
+        if (combiner) {
+          model.value = combiner(model.value, result);
+        }
+      });
+      return result;
     } catch (e) {
       runInAction(function () {
+        model.pendingTaskCount--;
         model.errored = true;
       });
       // TODO very good chance the caller is not listening to the result
       throw e;
-    } finally {
-      runInAction(function () {
-        model.pendingTaskCount--;
-      });
     }
+  }
+
+  createController(model: AsyncModel<V>): AsyncController<V> {
+    const append = <T>(task: AsyncTask<T>, combiner?: (v: V, r: T) => V) => {
+      return this.append(model, task, combiner);
+    };
+    return {
+      append,
+    };
   }
 }
 
-export class AsyncModel {
+export class AsyncModel<V> {
+  constructor(initialValue: V) {
+    this.value = initialValue;
+  }
+
+  @observable.ref
+  accessor value: V;
+
   @observable.ref
   accessor forceLoading = true;
 

@@ -1,0 +1,1 @@
+Taken from @mediapipe library since TFJS expects this to be an exploded resource instead of a library

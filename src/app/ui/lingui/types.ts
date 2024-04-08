@@ -7,7 +7,7 @@ import {
 
 export type LinguiLoaderProps = PropsWithChildren<{
   loadMessages: (locale: string) => Promise<Messages>,
-  asyncController: AsyncController,
+  asyncController: AsyncController<void>,
   locale: string,
 }>;
 

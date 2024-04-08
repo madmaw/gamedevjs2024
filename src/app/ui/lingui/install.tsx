@@ -23,16 +23,18 @@ export function install(): {
   function LinguiLoader({
     loadMessages,
     locale,
-    children,
     asyncController,
+    children,
   }: LinguiLoaderProps) {
     const model = useMemo(function () {
       return new LinguiModel();
     }, []);
     useEffect(function () {
-      asyncController.append(function () {
-        return presenter.requestLoadLocale(model, locale, loadMessages);
-      });
+      asyncController.append(
+        function () {
+          return presenter.requestLoadLocale(model, locale, loadMessages);
+        },
+      );
     }, [
       model,
       locale,
