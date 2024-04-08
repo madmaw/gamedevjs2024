@@ -1,6 +1,8 @@
 import { keyframes } from '@emotion/react';
 import styled from '@emotion/styled';
 import { type PropsWithChildren } from 'react';
+import { Alignment } from 'ui/alignment';
+import { Column } from './layout';
 
 export type SpinnerEasing = 'linear' | 'ease-in-out';
 
@@ -18,8 +20,11 @@ const spin = keyframes`
   }
 `;
 
-const Container = styled.div<{ durationMillis: number, easing: SpinnerEasing }>`
+const Container = styled(Column)`
   position: relative;
+`;
+
+const Animator = styled.div<{ durationMillis: number, easing: SpinnerEasing }>`
   transform-origin: 50% 50%;
   animation: ${spin} ${({ durationMillis }) => durationMillis}ms ${({ easing }) => easing} infinite;
 `;
@@ -30,11 +35,13 @@ export function Spinner({
   children,
 }: SpinnerProps) {
   return (
-    <Container
-      durationMillis={durationMillis}
-      easing={easing}
-    >
-      {children}
+    <Container crossAlignment={Alignment.Middle}>
+      <Animator
+        durationMillis={durationMillis}
+        easing={easing}
+      >
+        {children}
+      </Animator>
     </Container>
   );
 }

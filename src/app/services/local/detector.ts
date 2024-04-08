@@ -7,6 +7,7 @@ import {
   type Detector,
   type DetectorService,
 } from 'app/services/detector';
+import { delay } from 'base/delay';
 import {
   type Observable,
   Subject,
@@ -43,7 +44,6 @@ class TFJSDetector implements Detector {
     // TF will probably complain if we re-initialize all the models even after
     // disposing of them
     // this.poseDetector.dispose();
-    // this.handDetector.dispose();
   }
 }
 
@@ -63,7 +63,7 @@ export class TFJSDetectorService implements DetectorService {
   private async _loadDetector(): Promise<Detector> {
     // TODO somehow split up so these aren't included in the main bundle
     // const mediaPipePromise = import('@mediapipe/pose');
-    const mediaPipePromise = Promise.resolve();
+    const mediaPipePromise = delay(1000);
     const poseDetectorPromise = Promise.all([
       import('@tensorflow-models/pose-detection'),
       mediaPipePromise,

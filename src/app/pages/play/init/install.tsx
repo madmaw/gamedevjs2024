@@ -31,18 +31,22 @@ export function install({
   }
 
   return function () {
-    const asyncModel = useMemo(function () {
-      return new AsyncModel<PlayInputs>({});
+    const [
+      asyncModel,
+      asyncController,
+    ] = useMemo(function () {
+      const asyncModel = new AsyncModel<PlayInputs>({});
+      const asyncController = asyncPresenter.createController(asyncModel);
+      return [
+        asyncModel,
+        asyncController,
+      ] as const;
     }, []);
-
-    const asyncController = useMemo(function () {
-      return asyncPresenter.createController(asyncModel);
-    }, [asyncModel]);
 
     const ObservingAsync = usePartialObserverComponent(
       function () {
         return {
-          // TODO may not observe changes on this model
+          // TODO is there a better way to force observing changes on model?
           state: {
             type: asyncModel.type,
             value: asyncModel.value,
