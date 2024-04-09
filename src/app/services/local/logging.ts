@@ -26,12 +26,12 @@ const enum LogLevel {
   Error = 'error',
 }
 
-export class FakeLoggingService implements LoggingService {
+export class ConsoleLoggingService implements LoggingService {
   constructor(private readonly defaultParameters: LoggingParameters) {
   }
 
   create(prefix: string, params: Omit<LoggingParameters, 'prefix'> = {}): LoggingService {
-    return new FakeLoggingService(
+    return new ConsoleLoggingService(
       combineParams(this.defaultParameters, {
         ...params,
         prefix,

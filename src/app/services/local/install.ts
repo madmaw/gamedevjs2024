@@ -1,8 +1,12 @@
+import { type LoggingService } from 'app/services/logging';
 import { type Services } from 'app/services/types';
 import { TFJSDetectorService } from './detector';
+import { ConsoleLoggingService } from './logging';
 
-export function install(): Pick<Services, 'detectorService'> {
+export function install(): Pick<Services, 'detectorService' | 'loggingService'> {
+  const loggingService: LoggingService = new ConsoleLoggingService({});
   return {
-    detectorService: new TFJSDetectorService(),
+    loggingService,
+    detectorService: new TFJSDetectorService(loggingService),
   };
 }

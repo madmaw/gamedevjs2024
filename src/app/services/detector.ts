@@ -7,7 +7,9 @@ import { type Observable } from 'rxjs';
 export type Detector = {
   detectOnce(image: PoseDetectorInput): Promise<Pose[]>,
 
-  detect(image: PoseDetectorInput): Observable<Pose[]>,
+  detect(image: PoseDetectorInput): Observable<Pose[]> & {
+    complete(): void,
+  },
 
   destroy(): void,
 };

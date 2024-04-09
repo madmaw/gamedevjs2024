@@ -7,8 +7,9 @@ export function install({ fake }: {
   fake: true,
 }): Services {
   checkState(fake, 'must be fake', fake);
+  const fakes = installFakes();
   return {
-    ...installFakes(),
+    ...fakes,
     ...installLocal(),
   };
 }
