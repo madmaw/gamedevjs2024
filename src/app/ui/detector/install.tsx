@@ -1,38 +1,47 @@
-import {
-  type Detector,
-  type DetectorService,
-} from 'app/services/detector';
+import { type Pose } from '@tensorflow-models/pose-detection';
+import { type DetectorService } from 'app/services/detector';
 import { useEffect } from 'react';
+import { type Observable } from 'rxjs';
 import {
-  type DetectorInitializerProps,
-  type WithDetector,
+  type PoseDetectorInitializerProps,
+  type WithPoseStream,
 } from './types';
 
 export function install({
   detectorService,
 }: {
-  detectorService: DetectorService,
+  detectorService: DetectorService<readonly Pose[]>,
 }) {
-  return function<V extends WithDetector = WithDetector> ({
+  return function<V extends WithPoseStream = WithPoseStream> ({
     children,
     asyncController,
-  }: DetectorInitializerProps<V>) {
+    webcam,
+  }: PoseDetectorInitializerProps<V>) {
     useEffect(function () {
-      const detectorPromise = asyncController.append<Detector>(
-        function () {
-          return detectorService.loadDetector();
+      if (webcam === undefined) {
+        return;
+      }
+      const poseStreamPromise = asyncController.append<Observable<readonly Pose[]> & {
+        complete: () => void,
+      }>(
+        async function () {
+          const detector = await detectorService.loadDetector();
+          return detector.detect(webcam);
         },
-        function (withDetector: V, detector: Detector): V {
-          withDetector.detector = detector;
+        function (withDetector: V, stream: Observable<readonly Pose[]>): V {
+          withDetector.poseStream = stream;
           return withDetector;
         },
       );
       return function () {
-        detectorPromise.then(function (detector) {
-          detector.destroy();
+        poseStreamPromise.then(function (poseStream) {
+          poseStream.complete();
         });
       };
-    });
+    }, [
+      asyncController,
+      webcam,
+    ]);
     return (
       <>
         {children}

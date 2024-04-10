@@ -1,19 +1,16 @@
-import {
-  type Pose,
-  type PoseDetectorInput,
-} from '@tensorflow-models/pose-detection';
+import { type PoseDetectorInput } from '@tensorflow-models/pose-detection';
 import { type Observable } from 'rxjs';
 
-export type Detector = {
-  detectOnce(image: PoseDetectorInput): Promise<Pose[]>,
+export type Detector<T> = {
+  detectOnce(image: PoseDetectorInput): Promise<T>,
 
-  detect(image: PoseDetectorInput): Observable<Pose[]> & {
+  detect(image: PoseDetectorInput): Observable<T> & {
     complete(): void,
   },
 
   destroy(): void,
 };
 
-export type DetectorService = {
-  loadDetector(): Promise<Detector>,
+export type DetectorService<T> = {
+  loadDetector(): Promise<Detector<T>>,
 };

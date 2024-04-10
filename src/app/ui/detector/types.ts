@@ -1,16 +1,20 @@
-import { type Detector } from 'app/services/detector';
+import { type Pose } from '@tensorflow-models/pose-detection';
 import { type AsyncController } from 'app/ui/async/controller';
 import {
   type ComponentType,
   type PropsWithChildren,
 } from 'react';
+import { type Observable } from 'rxjs';
 
-export type WithDetector = Partial<{
-  detector: Detector,
+export type WithPoseStream = Partial<{
+  poseStream: Observable<readonly Pose[]>,
 }>;
 
-export type DetectorInitializerProps<V extends WithDetector = WithDetector> = PropsWithChildren<{
+export type PoseDetectorInitializerProps<V extends WithPoseStream = WithPoseStream> = PropsWithChildren<{
   asyncController: AsyncController<V>,
+  webcam: HTMLVideoElement | undefined,
 }>;
 
-export type DetectorInitializer<V extends WithDetector = WithDetector> = ComponentType<DetectorInitializerProps<V>>;
+export type PoseDetectorInitializer<V extends WithPoseStream = WithPoseStream> = ComponentType<
+  PoseDetectorInitializerProps<V>
+>;

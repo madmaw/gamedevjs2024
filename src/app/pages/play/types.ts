@@ -1,8 +1,8 @@
-import { type WithDetector } from 'app/ui/detector/types';
+import { type WithPoseStream } from 'app/ui/detector/types';
 import { type WithWebcam } from 'app/ui/webcam/types';
 import { type ComponentType } from 'react';
 
-export type PlayInputs = WithDetector & WithWebcam;
+export type PlayInputs = WithPoseStream & WithWebcam;
 
 export type PlayProps = PlayInputs;
 

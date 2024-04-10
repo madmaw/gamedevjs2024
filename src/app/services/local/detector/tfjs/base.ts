@@ -1,8 +1,4 @@
-import {
-  type Pose,
-  type PoseDetector,
-  type PoseDetectorInput,
-} from '@tensorflow-models/pose-detection';
+import { type PoseDetectorInput } from '@tensorflow-models/pose-detection';
 import {
   type Detector,
   type DetectorService,
@@ -11,11 +7,8 @@ import { type LoggingService } from 'app/services/logging';
 import { delay } from 'base/delay';
 import { Subject } from 'rxjs';
 
-const LOCAL_MEDIA_PIPE_PATH = '/@mediapipe/pose';
-
-class TFJSDetector implements Detector {
+export abstract class TFJSBaseDetector<T> implements Detector<T> {
   constructor(
-    private readonly poseDetector: PoseDetector,
     private readonly loggingService: LoggingService,
     // gap between pose detections to allow other processing (default allow for one render at 60fps)
     private readonly minPoseDetectionIntervalMillis = 1000 / 60,
@@ -24,12 +17,10 @@ class TFJSDetector implements Detector {
   ) {
   }
 
-  async detectOnce(image: PoseDetectorInput): Promise<Pose[]> {
-    return this.poseDetector.estimatePoses(image);
-  }
+  abstract detectOnce(image: PoseDetectorInput): Promise<T>;
 
   detect(image: PoseDetectorInput) {
-    const subject = new Subject<Pose[]>();
+    const subject = new Subject<T>();
     (async () => {
       let canceled = false;
       let erroring = false;
@@ -73,40 +64,15 @@ class TFJSDetector implements Detector {
   }
 }
 
-export class TFJSDetectorService implements DetectorService {
-  private detectorPromise: Promise<Detector> | null = null;
+export abstract class TFJSBaseDetectorService<T> implements DetectorService<T> {
+  private detectorPromise: Promise<Detector<T>> | null = null;
 
-  constructor(
-    private readonly loggingService: LoggingService,
-    private readonly modelType: 'lite' | 'full' | 'heavy' = 'lite',
-  ) {
-  }
-
-  loadDetector(): Promise<Detector> {
+  loadDetector(): Promise<Detector<T>> {
     if (this.detectorPromise == null) {
       this.detectorPromise = this._loadDetector();
     }
     return this.detectorPromise;
   }
 
-  private async _loadDetector(): Promise<Detector> {
-    // TODO somehow split up so these aren't included in the main bundle
-    // const mediaPipePromise = import('@mediapipe/pose');
-    const mediaPipePromise = delay(1000);
-    const poseDetectorPromise = Promise.all([
-      import('@tensorflow-models/pose-detection'),
-      mediaPipePromise,
-    ]).then(([poseDetection]) => {
-      return poseDetection.createDetector(poseDetection.SupportedModels.BlazePose, {
-        runtime: 'mediapipe',
-        modelType: this.modelType,
-        // TODO get from local node_modules (somehow)
-        // solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404',
-        solutionPath: LOCAL_MEDIA_PIPE_PATH,
-      });
-    });
-    const poseDetector = await poseDetectorPromise;
-
-    return new TFJSDetector(poseDetector, this.loggingService);
-  }
+  protected abstract _loadDetector(): Promise<Detector<T>>;
 }

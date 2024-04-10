@@ -76,7 +76,7 @@ function getHands<
 
 export function install() {
   return function ({
-    detector,
+    poseStream,
     webcam,
   }: PlayProps) {
     const [
@@ -97,11 +97,10 @@ export function install() {
     const keypointCanvas = useRef<HTMLCanvasElement>(null);
 
     useEffect(function () {
-      if (detector == null || webcam == null) {
+      if (poseStream == null || webcam == null) {
         return;
       }
-      const poseStream = detector.detect(webcam);
-      poseStream.subscribe({
+      const subscription = poseStream.subscribe({
         next(poses) {
           setDetections((detections) => {
             const now = new Date();
@@ -219,11 +218,9 @@ export function install() {
           }
         },
       });
-      return function () {
-        poseStream.complete();
-      };
+      return subscription.unsubscribe.bind(subscription);
     }, [
-      detector,
+      poseStream,
       webcam,
     ]);
     const detectionsPerSecond = detections.length > 10

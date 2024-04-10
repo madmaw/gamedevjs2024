@@ -6,7 +6,7 @@ import {
   AsyncModel,
   AsyncPresenter,
 } from 'app/ui/async/presenter';
-import { type DetectorInitializer } from 'app/ui/detector/types';
+import { type PoseDetectorInitializer } from 'app/ui/detector/types';
 import { type WebcamInitializer } from 'app/ui/webcam/types';
 import { usePartialObserverComponent } from 'base/react/partial';
 import { useMemo } from 'react';
@@ -15,11 +15,11 @@ import { PlayFailure } from './failure';
 import { PlayLoading } from './loading';
 
 export function install({
-  DetectorInitializer,
+  PoseDetectorInitializer,
   WebcamInitializer,
   Play,
 }: {
-  DetectorInitializer: DetectorInitializer,
+  PoseDetectorInitializer: PoseDetectorInitializer,
   WebcamInitializer: WebcamInitializer,
   Play: Play,
 }) {
@@ -47,9 +47,13 @@ export function install({
       function () {
         return {
           // TODO is there a better way to force observing changes on model?
+          // would be nice to just have `state: asyncModel,`
           state: {
             type: asyncModel.type,
             value: asyncModel.value,
+            // TODO could have progress based on how much of the value is populated
+            progress: undefined,
+            reason: undefined,
           },
           Loading: PlayLoading,
           Failure: PlayFailure,
@@ -60,12 +64,23 @@ export function install({
       Async,
     );
 
+    const ObservingPoseDetectorInitializer = usePartialObserverComponent(
+      function () {
+        return {
+          // TODO value.webcam is not observable so this will probably never rerender!
+          webcam: asyncModel.value.webcam,
+        };
+      },
+      [asyncModel],
+      PoseDetectorInitializer,
+    );
+
     return (
-      <DetectorInitializer asyncController={asyncController}>
+      <ObservingPoseDetectorInitializer asyncController={asyncController}>
         <WebcamInitializer asyncController={asyncController}>
           <ObservingAsync />
         </WebcamInitializer>
-      </DetectorInitializer>
+      </ObservingPoseDetectorInitializer>
     );
   };
 }

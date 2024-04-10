@@ -34,7 +34,7 @@ export function install() {
     detectorService,
   } = services;
 
-  const DetectorInitializer = installDetectorInitializer({
+  const PoseDetectorInitializer = installDetectorInitializer({
     detectorService,
   });
 
@@ -47,7 +47,7 @@ export function install() {
     LinguiLoader,
   } = installUI();
   const Play = installPlay({
-    DetectorInitializer,
+    PoseDetectorInitializer,
     WebcamInitializer,
   });
   const Home = installHome({
