@@ -76,7 +76,10 @@ class TFJSDetector implements Detector {
 export class TFJSDetectorService implements DetectorService {
   private detectorPromise: Promise<Detector> | null = null;
 
-  constructor(private readonly loggingService: LoggingService, private readonly modelType: 'lite' | 'full' = 'lite') {
+  constructor(
+    private readonly loggingService: LoggingService,
+    private readonly modelType: 'lite' | 'full' | 'heavy' = 'lite',
+  ) {
   }
 
   loadDetector(): Promise<Detector> {
