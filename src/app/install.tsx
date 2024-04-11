@@ -22,7 +22,6 @@ import {
   StackPresenter,
 } from './ui/stack/presenter';
 import { Themes } from './ui/theme/types';
-import { install as installWebcamInitializer } from './ui/webcam/install';
 
 export function install() {
   const services = installServices({
@@ -34,11 +33,9 @@ export function install() {
     detectorService,
   } = services;
 
-  const PoseDetectorInitializer = installDetectorInitializer({
+  const poseDetectorStreamFactory = installDetectorInitializer({
     detectorService,
   });
-
-  const WebcamInitializer = installWebcamInitializer();
 
   const {
     ThemeContextProvider,
@@ -47,8 +44,7 @@ export function install() {
     LinguiLoader,
   } = installUI();
   const Play = installPlay({
-    PoseDetectorInitializer,
-    WebcamInitializer,
+    poseDetectorStreamFactory,
   });
   const Home = installHome({
     Play,

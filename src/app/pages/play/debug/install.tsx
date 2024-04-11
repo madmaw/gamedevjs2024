@@ -77,7 +77,7 @@ function getHands<
 export function install() {
   return function ({
     poseStream,
-    webcam,
+    camera,
   }: PlayProps) {
     const [
       detections,
@@ -89,17 +89,12 @@ export function install() {
         while (ref.firstElementChild != null) {
           ref.removeChild(ref.firstElementChild);
         }
-        if (webcam != null) {
-          ref.appendChild(webcam);
-        }
+        ref.appendChild(camera);
       }
-    }, [webcam]);
+    }, [camera]);
     const keypointCanvas = useRef<HTMLCanvasElement>(null);
 
     useEffect(function () {
-      if (poseStream == null || webcam == null) {
-        return;
-      }
       const subscription = poseStream.subscribe({
         next(poses) {
           setDetections((detections) => {
@@ -116,8 +111,8 @@ export function install() {
           if (keypointCanvas.current != null) {
             const ctx = keypointCanvas.current.getContext('2d');
             if (ctx != null) {
-              keypointCanvas.current.width = webcam.videoWidth;
-              keypointCanvas.current.height = webcam.videoHeight;
+              keypointCanvas.current.width = camera.videoWidth;
+              keypointCanvas.current.height = camera.videoHeight;
               ctx.clearRect(0, 0, keypointCanvas.current.width, keypointCanvas.current.height);
               ctx.strokeStyle = 'black';
               poses.forEach(function (pose) {
@@ -221,7 +216,7 @@ export function install() {
       return subscription.unsubscribe.bind(subscription);
     }, [
       poseStream,
-      webcam,
+      camera,
     ]);
     const detectionsPerSecond = detections.length > 10
       ? 1000 * detections.length / (detections[detections.length - 1].getTime() - detections[0].getTime())

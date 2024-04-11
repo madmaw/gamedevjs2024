@@ -27,7 +27,7 @@ export class AsyncPresenter<V> {
       runInAction(function () {
         model.pendingTaskCount--;
         if (combiner) {
-          model.value = combiner(model.value, result);
+          model.value = combiner(model.value!, result);
         }
       });
       return result;
@@ -52,12 +52,12 @@ export class AsyncPresenter<V> {
 }
 
 export class AsyncModel<V> {
-  constructor(initialValue: V) {
+  constructor(initialValue?: V) {
     this.value = initialValue;
   }
 
   @observable.ref
-  accessor value: V;
+  accessor value: V | undefined;
 
   @observable.ref
   accessor forceLoading = true;

@@ -1,9 +1,10 @@
-import { type WithPoseStream } from 'app/ui/detector/types';
-import { type WithWebcam } from 'app/ui/webcam/types';
+import { type Pose } from '@tensorflow-models/pose-detection';
 import { type ComponentType } from 'react';
+import { type Observable } from 'rxjs';
 
-export type PlayInputs = WithPoseStream & WithWebcam;
-
-export type PlayProps = PlayInputs;
+export type PlayProps = {
+  camera: HTMLVideoElement,
+  poseStream: Observable<readonly Pose[]>,
+};
 
 export type Play = ComponentType<PlayProps>;

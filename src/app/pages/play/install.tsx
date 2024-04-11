@@ -1,20 +1,16 @@
-import { type PoseDetectorInitializer } from 'app/ui/detector/types';
-import { type WebcamInitializer } from 'app/ui/webcam/types';
+import { type PoseDetectorStreamFactory } from 'app/ui/detector/types';
 
 import { install as installDebug } from './debug/install';
 import { install as installInit } from './init/install';
 
 export function install({
-  PoseDetectorInitializer,
-  WebcamInitializer,
+  poseDetectorStreamFactory,
 }: {
-  PoseDetectorInitializer: PoseDetectorInitializer,
-  WebcamInitializer: WebcamInitializer,
+  poseDetectorStreamFactory: PoseDetectorStreamFactory,
 }) {
   const Display = installDebug();
   return installInit({
-    PoseDetectorInitializer,
-    WebcamInitializer,
+    poseDetectorStreamFactory,
     Play: Display,
   });
 }
