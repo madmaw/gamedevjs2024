@@ -1,7 +1,5 @@
-import { type Pose } from '@tensorflow-models/pose-detection';
-import { type DetectorService } from 'app/services/detector';
+import { type PoseDetectorService } from 'app/services/detector';
 import { type LoggingService } from 'app/services/logging';
-import { install as installDetectorInitializer } from 'app/ui/detector/install';
 import {
   StackModel,
   StackPresenter,
@@ -19,17 +17,13 @@ import { install as installPlay } from './play/install';
 
 export function install({
   loggingService,
-  detectorService,
+  poseDetectorService,
 }: {
   loggingService: LoggingService,
-  detectorService: DetectorService<readonly Pose[]>,
+  poseDetectorService: PoseDetectorService,
 }) {
-  const poseDetectorStreamFactory = installDetectorInitializer({
-    detectorService,
-  });
-
   const Play = installPlay({
-    poseDetectorStreamFactory,
+    poseDetectorService,
   });
   const Home = installHome({
     Play,

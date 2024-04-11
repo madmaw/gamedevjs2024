@@ -12,6 +12,7 @@ import {
   Vector3,
 } from 'three';
 import { Alignment } from 'ui/alignment';
+import { createCamera } from 'ui/camera';
 import { Aligner } from 'ui/components/aligner';
 import { Row } from 'ui/components/layout';
 import { Text } from 'ui/components/typography/text';
@@ -20,7 +21,7 @@ const VideoWrapper = styled.div`
   position: relative;
 `;
 
-const VideoFlipper = styled.div`
+const VideoFlipper = styled.video`
   transform: scale(-1, 1);
 `;
 
@@ -77,21 +78,23 @@ function getHands<
 export function install() {
   return function ({
     poseStream,
-    camera,
   }: PlayProps) {
     const [
       detections,
       setDetections,
     ] = useState<Date[]>([]);
 
-    const populate = useCallback(function (ref: HTMLDivElement) {
+    const [
+      camera,
+      setCamera,
+    ] = useState<HTMLVideoElement | null>(null);
+
+    const populate = useCallback(async function (ref: HTMLVideoElement) {
       if (ref != null) {
-        while (ref.firstElementChild != null) {
-          ref.removeChild(ref.firstElementChild);
-        }
-        ref.appendChild(camera);
+        const camera = await createCamera(ref, 640);
+        setCamera(camera);
       }
-    }, [camera]);
+    }, []);
     const keypointCanvas = useRef<HTMLCanvasElement>(null);
 
     useEffect(function () {
@@ -110,7 +113,7 @@ export function install() {
           });
           if (keypointCanvas.current != null) {
             const ctx = keypointCanvas.current.getContext('2d');
-            if (ctx != null) {
+            if (ctx != null && camera != null) {
               keypointCanvas.current.width = camera.videoWidth;
               keypointCanvas.current.height = camera.videoHeight;
               ctx.clearRect(0, 0, keypointCanvas.current.width, keypointCanvas.current.height);

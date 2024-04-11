@@ -2,10 +2,15 @@ import { type PoseDetectorInput } from '@tensorflow-models/pose-detection';
 import {
   type Detector,
   type DetectorService,
+  type PoseSource,
 } from 'app/services/detector';
 import { type LoggingService } from 'app/services/logging';
 import { delay } from 'base/delay';
-import { Subject } from 'rxjs';
+import {
+  type Observable,
+  Subject,
+} from 'rxjs';
+import { createCamera } from 'ui/camera';
 
 export abstract class TFJSBaseDetector<T> implements Detector<T> {
   constructor(
@@ -17,9 +22,24 @@ export abstract class TFJSBaseDetector<T> implements Detector<T> {
   ) {
   }
 
-  abstract detectOnce(image: PoseDetectorInput): Promise<T>;
+  abstract detectOnceFromInput(image: PoseDetectorInput): Promise<T>;
 
-  detect(image: PoseDetectorInput) {
+  async detectOnce(_source: PoseSource) {
+    const camera = await createCamera();
+    return this.detectOnceFromInput(camera).finally(() => {
+      camera.pause();
+    });
+  }
+
+  async detect(_source: PoseSource): Promise<Observable<T> & {
+    complete: () => void,
+  }> {
+    const camera = await createCamera();
+    // TODO pause camera when the stream is complete
+    return this.detectFromInput(camera);
+  }
+
+  private detectFromInput(image: PoseDetectorInput) {
     const subject = new Subject<T>();
     (async () => {
       let canceled = false;
@@ -27,7 +47,7 @@ export abstract class TFJSBaseDetector<T> implements Detector<T> {
       while (!canceled) {
         try {
           const before = Date.now();
-          const result = await this.detectOnce(image);
+          const result = await this.detectOnceFromInput(image);
           const after = Date.now();
           erroring = false;
           subject.next(result);

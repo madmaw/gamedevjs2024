@@ -3,7 +3,6 @@ import { type ComponentType } from 'react';
 import { type Observable } from 'rxjs';
 
 export type PlayProps = {
-  camera: HTMLVideoElement,
   poseStream: Observable<readonly Pose[]>,
 };
 

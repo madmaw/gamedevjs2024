@@ -15,14 +15,14 @@ export function install({
 }) {
   const {
     loggingService,
-    detectorService,
+    poseDetectorService,
   } = services;
 
   switch (mode) {
     case Mode.Main:
       return installMain({
         loggingService,
-        detectorService,
+        poseDetectorService,
       });
     default:
       throw new UnreachableError(mode);

@@ -1,12 +1,21 @@
-import { type PoseDetectorInput } from '@tensorflow-models/pose-detection';
+import { type Hand } from '@tensorflow-models/hand-pose-detection';
+import { type Pose } from '@tensorflow-models/pose-detection';
 import { type Observable } from 'rxjs';
 
-export type Detector<T> = {
-  detectOnce(image: PoseDetectorInput): Promise<T>,
+export const enum PoseSourceType {
+  Camera = 1,
+}
 
-  detect(image: PoseDetectorInput): Observable<T> & {
+export type PoseSource = {
+  type: PoseSourceType.Camera,
+};
+
+export type Detector<T> = {
+  detectOnce(source: PoseSource): Promise<T>,
+
+  detect(source: PoseSource): Promise<Observable<T> & {
     complete(): void,
-  },
+  }>,
 
   destroy(): void,
 };
@@ -14,3 +23,7 @@ export type Detector<T> = {
 export type DetectorService<T> = {
   loadDetector(): Promise<Detector<T>>,
 };
+
+export type PoseDetectorService = DetectorService<readonly Pose[]>;
+
+export type HandDetectorService = DetectorService<readonly Hand[]>;

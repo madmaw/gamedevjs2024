@@ -3,23 +3,25 @@ import {
   type PlayProps,
 } from 'app/pages/main/play/types';
 import {
+  type PoseDetectorService,
+  PoseSourceType,
+} from 'app/services/detector';
+import {
   AsyncModel,
   AsyncPresenter,
 } from 'app/ui/async/presenter';
-import { type PoseDetectorStreamFactory } from 'app/ui/detector/types';
 import { useAsyncEffect } from 'base/react/async';
 import { usePartialObserverComponent } from 'base/react/partial';
 import { useMemo } from 'react';
-import { createCamera } from 'ui/camera';
 import { CustomAsync } from 'ui/components/async/custom';
 import { PlayFailure } from './failure';
 import { PlayLoading } from './loading';
 
 export function install({
-  poseDetectorStreamFactory,
+  poseDetectorService,
   Play,
 }: {
-  poseDetectorStreamFactory: PoseDetectorStreamFactory,
+  poseDetectorService: PoseDetectorService,
   Play: Play,
 }) {
   const asyncPresenter = new AsyncPresenter<PlayProps>();
@@ -35,26 +37,22 @@ export function install({
     }, []);
 
     useAsyncEffect(async function () {
-      const {
-        camera,
-        poseStream,
-      } = await asyncPresenter.append(
+      const poseStream = await asyncPresenter.append(
         asyncModel,
         async function () {
-          const camera = await createCamera();
-          const poseStream = await poseDetectorStreamFactory(camera);
-          camera.play();
+          const detector = await poseDetectorService.loadDetector();
+          const poseStream = await detector.detect({
+            type: PoseSourceType.Camera,
+          });
+          return poseStream;
+        },
+        function (_value, poseStream) {
           return {
-            camera,
             poseStream,
           };
         },
-        function (_value, result) {
-          return result;
-        },
       );
       return function () {
-        camera.pause();
         poseStream.complete();
       };
     }, [asyncModel]);

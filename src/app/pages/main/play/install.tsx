@@ -1,16 +1,15 @@
-import { type PoseDetectorStreamFactory } from 'app/ui/detector/types';
-
+import { type PoseDetectorService } from 'app/services/detector';
 import { install as installDebug } from './debug/install';
 import { install as installInit } from './init/install';
 
 export function install({
-  poseDetectorStreamFactory,
+  poseDetectorService,
 }: {
-  poseDetectorStreamFactory: PoseDetectorStreamFactory,
+  poseDetectorService: PoseDetectorService,
 }) {
   const Display = installDebug();
   return installInit({
-    poseDetectorStreamFactory,
+    poseDetectorService,
     Play: Display,
   });
 }

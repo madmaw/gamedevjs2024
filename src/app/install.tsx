@@ -41,6 +41,8 @@ export function install() {
 
   const defaultLocales = [navigator.language].concat(...(navigator.languages || []), 'en');
 
+  // create a loading component with no text so we can use it while loading
+  // fonts and i18n resources
   return function () {
     const [
       asyncController,

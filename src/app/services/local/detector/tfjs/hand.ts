@@ -1,8 +1,8 @@
 import {
-  type Pose,
-  type PoseDetector,
-  type PoseDetectorInput,
-} from '@tensorflow-models/pose-detection';
+  type Hand,
+  type HandDetector,
+} from '@tensorflow-models/hand-pose-detection';
+import { type PoseDetectorInput } from '@tensorflow-models/pose-detection';
 import { type Detector } from 'app/services/detector';
 import { type LoggingService } from 'app/services/logging';
 import { delay } from 'base/delay';
@@ -11,11 +11,11 @@ import {
   TFJSBaseDetectorService,
 } from './base';
 
-const LOCAL_MEDIA_PIPE_PATH = '/@mediapipe/pose';
+const LOCAL_MEDIA_PIPE_PATH = '/@mediapipe/hands';
 
-class TFJSPoseDetector extends TFJSBaseDetector<readonly Pose[]> {
+class TFJSHandDetector extends TFJSBaseDetector<readonly Hand[]> {
   constructor(
-    private readonly poseDetector: PoseDetector,
+    private readonly handDetector: HandDetector,
     loggingService: LoggingService,
     // gap between pose detections to allow other processing (default allow for one render at 60fps)
     minDetectionIntervalMillis = 1000 / 60,
@@ -25,37 +25,37 @@ class TFJSPoseDetector extends TFJSBaseDetector<readonly Pose[]> {
     super(loggingService, minDetectionIntervalMillis, targetDetectionFrequencyMillis);
   }
 
-  async detectOnceFromInput(image: PoseDetectorInput): Promise<readonly Pose[]> {
-    return this.poseDetector.estimatePoses(image);
+  async detectOnceFromInput(image: PoseDetectorInput): Promise<readonly Hand[]> {
+    return this.handDetector.estimateHands(image);
   }
 }
 
-export class TFJSPoseDetectorService extends TFJSBaseDetectorService<readonly Pose[]> {
+export class TFJSHandDetectorService extends TFJSBaseDetectorService<readonly Hand[]> {
   constructor(
     private readonly loggingService: LoggingService,
-    private readonly modelType: 'lite' | 'full' | 'heavy' = 'lite',
+    private readonly modelType: 'lite' | 'full' = 'lite',
   ) {
     super();
   }
 
-  protected override async _loadDetector(): Promise<Detector<readonly Pose[]>> {
+  protected override async _loadDetector(): Promise<Detector<readonly Hand[]>> {
     // TODO somehow split up so these aren't included in the main bundle
     // const mediaPipePromise = import('@mediapipe/pose');
     const mediaPipePromise = delay(1000);
-    const poseDetectorPromise = Promise.all([
-      import('@tensorflow-models/pose-detection'),
+    const handDetectorPromise = Promise.all([
+      import('@tensorflow-models/hand-pose-detection'),
       mediaPipePromise,
-    ]).then(([poseDetection]) => {
-      return poseDetection.createDetector(poseDetection.SupportedModels.BlazePose, {
+    ]).then(([handDetection]) => {
+      return handDetection.createDetector(handDetection.SupportedModels.MediaPipeHands, {
         runtime: 'mediapipe',
         modelType: this.modelType,
         // TODO get from local node_modules (somehow)
-        // solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404',
+        // solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.5.1675469404',
         solutionPath: LOCAL_MEDIA_PIPE_PATH,
       });
     });
-    const poseDetector = await poseDetectorPromise;
+    const handDetector = await handDetectorPromise;
 
-    return new TFJSPoseDetector(poseDetector, this.loggingService);
+    return new TFJSHandDetector(handDetector, this.loggingService);
   }
 }
