@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { type PlayProps } from 'app/pages/play/types';
+import { type PlayProps } from 'app/pages/main/play/types';
 import { exists } from 'base/exists';
 import {
   useCallback,

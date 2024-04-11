@@ -5,8 +5,8 @@ const config: LinguiConfig = {
   sourceLocale: 'en',
   catalogs: [
     {
-      path: '<rootDir>/src/app/locales/{locale}',
-      include: ['src/app/**/*.tsx'],
+      path: '<rootDir>/src/app/pages/main/locales/{locale}',
+      include: ['src/app/pages/main/**/*.tsx'],
     },
   ],
 };

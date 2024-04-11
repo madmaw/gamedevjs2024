@@ -1,7 +1,7 @@
 import { i18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
+import { type LoggingService } from 'app/services/logging';
 import {
-  type PropsWithChildren,
   useEffect,
   useMemo,
 } from 'react';
@@ -12,17 +12,23 @@ import {
 import {
   type LinguiLoader,
   type LinguiLoaderProps,
+  type LinguiProvider,
+  type LinguiProviderProps,
 } from './types';
 
-export function install(): {
+export function install({
+  loggingService,
+}: {
+  loggingService: LoggingService,
+}): {
   LinguiLoader: LinguiLoader,
-  LinguiProvider: React.ComponentType<PropsWithChildren>,
+  LinguiProvider: LinguiProvider,
 } {
-  const presenter = new LinguiPresenter(i18n);
+  const presenter = new LinguiPresenter(loggingService, i18n);
 
   function LinguiLoader({
     loadMessages,
-    locale,
+    locales,
     asyncController,
     children,
   }: LinguiLoaderProps) {
@@ -30,14 +36,16 @@ export function install(): {
       return new LinguiModel();
     }, []);
     useEffect(function () {
-      asyncController.append(
-        function () {
-          return presenter.requestLoadLocale(model, locale, loadMessages);
-        },
-      );
+      if (loadMessages) {
+        asyncController.append(
+          function () {
+            return presenter.loadLocale(model, locales, loadMessages);
+          },
+        );
+      }
     }, [
       model,
-      locale,
+      locales,
       loadMessages,
       asyncController,
     ]);
@@ -47,14 +55,23 @@ export function install(): {
       </>
     );
   }
-  function LinguiProvider({ children }: PropsWithChildren) {
-    return (
-      <I18nProvider
-        i18n={i18n}
-      >
-        {children}
-      </I18nProvider>
-    );
+  function LinguiProvider({
+    children,
+    loadMessages,
+  }: LinguiProviderProps) {
+    return loadMessages
+      ? (
+        <I18nProvider
+          i18n={i18n}
+        >
+          {children}
+        </I18nProvider>
+      )
+      : (
+        <>
+          {children}
+        </>
+      );
   }
   return {
     LinguiLoader,

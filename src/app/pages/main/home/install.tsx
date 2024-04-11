@@ -1,9 +1,11 @@
 import { msg } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
-import { type Play } from 'app/pages/play/types';
 import { type StackController } from 'app/ui/stack/controller';
 import { UnreachableError } from 'base/unreachable_error';
-import { useCallback } from 'react';
+import {
+  type ComponentType,
+  useCallback,
+} from 'react';
 import { Screen } from 'ui/components/screen';
 import {
   Size,
@@ -17,7 +19,7 @@ import {
 export function install({
   Play,
 }: {
-  Play: Play,
+  Play: ComponentType,
 }) {
   return function ({
     stackController,

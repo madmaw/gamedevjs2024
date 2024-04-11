@@ -9,7 +9,7 @@ import {
   type AsyncTask,
 } from './controller';
 
-export class AsyncPresenter<V> {
+export class AsyncPresenter<V = void> {
   constructor() {
   }
 
@@ -51,7 +51,7 @@ export class AsyncPresenter<V> {
   }
 }
 
-export class AsyncModel<V> {
+export class AsyncModel<V = void> {
   constructor(initialValue?: V) {
     this.value = initialValue;
   }

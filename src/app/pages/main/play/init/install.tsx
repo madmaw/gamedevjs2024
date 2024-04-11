@@ -1,7 +1,7 @@
 import {
   type Play,
   type PlayProps,
-} from 'app/pages/play/types';
+} from 'app/pages/main/play/types';
 import {
   AsyncModel,
   AsyncPresenter,

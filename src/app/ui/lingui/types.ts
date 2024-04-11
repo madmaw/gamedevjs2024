@@ -6,9 +6,15 @@ import {
 } from 'react';
 
 export type LinguiLoaderProps = PropsWithChildren<{
-  loadMessages: (locale: string) => Promise<Messages>,
-  asyncController: AsyncController<void>,
-  locale: string,
+  loadMessages: ((locale: string) => Promise<Messages>) | undefined,
+  asyncController: AsyncController,
+  locales: readonly string[],
 }>;
 
 export type LinguiLoader = ComponentType<LinguiLoaderProps>;
+
+export type LinguiProviderProps = PropsWithChildren<{
+  loadMessages: ((locale: string) => Promise<Messages>) | undefined,
+}>;
+
+export type LinguiProvider = ComponentType<LinguiProviderProps>;
