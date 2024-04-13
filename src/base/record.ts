@@ -22,7 +22,7 @@ export function combine<
     Object.keys(record).forEach((key) => {
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       const k = key as K;
-      acc[k] = acc[k] || record[k];
+      acc[k] = acc[k] ?? record[k];
     });
     return acc;
   }, {}) as R;

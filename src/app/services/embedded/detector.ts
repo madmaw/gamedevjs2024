@@ -8,7 +8,6 @@ import { type Embed } from 'app/services/types';
 import {
   type EmbeddedDetectorRoute,
   type Route,
-  RouteType,
 } from 'app/types';
 import {
   computed,
@@ -25,10 +24,10 @@ import {
 import { type EmbeddedMessage } from './types';
 
 class EmbeddedDetector<T> implements Detector<T> {
-  @observable
+  @observable.ref
   accessor activeCount = 0;
 
-  constructor(readonly service: EmbeddedDetectorService<T>) {
+  constructor(private readonly service: EmbeddedDetectorService<T>) {
   }
 
   async detectOnce(source: PoseSource): Promise<T> {
@@ -39,11 +38,15 @@ class EmbeddedDetector<T> implements Detector<T> {
   }
 
   detect(source: PoseSource): Promise<Observable<T> & { complete(): void }> {
-    // TODO key by source rather than just count
+    // TODO key by origin rather than just count
     const result = new Subject<T>();
     const subscription1 = this.service.messages.pipe(
-      filter(message => message.origin.type === RouteType.EmbeddedDetector && message.origin.source === source),
-      map(message => message.message),
+      filter(message => {
+        return message.origin.type === this.service.route.type
+          && message.origin.detectorType === this.service.route.detectorType
+          && message.origin.source.type === source.type;
+      }),
+      map(message => message.payload),
     ).subscribe(result);
     const subscription2 = result.subscribe({
       complete: () => {
@@ -86,7 +89,7 @@ export class EmbeddedDetectorService<T> implements DetectorService<T>, Embed {
 
   constructor(
     readonly route: Omit<EmbeddedDetectorRoute, 'source'>,
-    readonly messages: Observable<EmbeddedMessage<T>>,
+    readonly messages: Subject<EmbeddedMessage<T>>,
   ) {
   }
 

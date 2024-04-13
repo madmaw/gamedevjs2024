@@ -1,4 +1,7 @@
-import { type Page } from 'app/pages/types';
+import {
+  type Initializer,
+  type Page,
+} from 'app/pages/types';
 import { type PoseDetectorService } from 'app/services/detector';
 import { type LoggingService } from 'app/services/logging';
 import {
@@ -40,7 +43,7 @@ export function install({
 
   const stackPresenter = new StackPresenter(loggingService);
 
-  const Component = function () {
+  const Component = function ({ Initializer }: { Initializer: Initializer }) {
     const [ObservingStack] = useMemo(function () {
       // hoist stackController
       function HomeLayerComponent() {
@@ -60,11 +63,13 @@ export function install({
     }, []);
 
     return (
-      <SizeProvider size={Size.Medium}>
-        <ObservingStack
-          animationDurationMillis={300}
-        />
-      </SizeProvider>
+      <Initializer>
+        <SizeProvider size={Size.Medium}>
+          <ObservingStack
+            animationDurationMillis={300}
+          />
+        </SizeProvider>
+      </Initializer>
     );
   };
 

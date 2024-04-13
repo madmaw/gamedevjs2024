@@ -1,12 +1,20 @@
 import { createPartialObserverComponent } from 'base/react/partial';
 import { UnreachableError } from 'base/unreachable_error';
-import { useMemo } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+} from 'react';
 import { GenericAsync } from 'ui/components/async/generic';
 import {
   Size,
   SizeProvider,
 } from 'ui/metrics';
 import { install as installPage } from './pages/install';
+import {
+  type Initializer,
+  type InitializerProps,
+} from './pages/types';
 import { DetectorType } from './services/detector';
 import { install as installServices } from './services/install';
 import { type ServiceDescriptor } from './services/types';
@@ -78,6 +86,7 @@ export function install(url: string) {
     loadMessages,
   } = installPage({
     route,
+    context,
     services,
   });
 
@@ -107,6 +116,30 @@ export function install(url: string) {
       ] as const;
     }, []);
 
+    const Initializer = useCallback<Initializer>(function ({
+      children,
+      initialize = () => Promise.resolve(undefined),
+    }: InitializerProps) {
+      useEffect(function () {
+        const releasePromise = asyncController.append(initialize);
+        return function () {
+          releasePromise.then((release) => {
+            release?.();
+          });
+        };
+      });
+      return (
+        <ObservingGenericAsync>
+          <LinguiProvider loadMessages={loadMessages}>
+            {children}
+          </LinguiProvider>
+        </ObservingGenericAsync>
+      );
+    }, [
+      asyncController,
+      ObservingGenericAsync,
+    ]);
+
     // TODO Component should be allowed to change locale and default theme
     return (
       <SizeProvider size={Size.Large}>
@@ -122,11 +155,7 @@ export function install(url: string) {
               loadMessages={loadMessages}
               locales={defaultLocales}
             >
-              <ObservingGenericAsync>
-                <LinguiProvider loadMessages={loadMessages}>
-                  <PageComponent asyncController={asyncController} />
-                </LinguiProvider>
-              </ObservingGenericAsync>
+              <PageComponent Initializer={Initializer} />
             </LinguiLoader>
           </MetricsContextProvider>
         </ThemeContextProvider>

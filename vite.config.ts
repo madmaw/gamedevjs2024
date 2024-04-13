@@ -10,10 +10,6 @@ export default defineConfig({
     tsconfigPaths(),
     eslint({
       lintOnStart: true,
-      exclude: [
-        '/virtual:/**',
-        'node_modules/**',
-      ],
     }),
     react({
       // babel: {
@@ -25,10 +21,15 @@ export default defineConfig({
           [
             '@babel/plugin-proposal-decorators',
             {
-              version: '2023-05',
+              version: '2023-11',
             },
           ],
+          ['@babel/plugin-proposal-class-properties'],
+          ['@babel/plugin-transform-class-static-block'],
         ],
+        assumptions: {
+          setPublicClassFields: true,
+        },
       },
     }),
     lingui(),

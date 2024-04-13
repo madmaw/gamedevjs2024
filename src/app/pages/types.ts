@@ -1,8 +1,17 @@
 import { type Messages } from '@lingui/core';
-import { type AsyncController } from 'app/ui/async/controller';
+import {
+  type ComponentType,
+  type PropsWithChildren,
+} from 'react';
+
+export type InitializerProps = PropsWithChildren<{
+  initialize?: () => Promise<(() => void) | undefined>,
+}>;
+
+export type Initializer = ComponentType<InitializerProps>;
 
 export type PageProps = {
-  asyncController: AsyncController,
+  Initializer: Initializer,
 };
 
 export type Page = {

@@ -91,7 +91,7 @@ export function install() {
 
     const populate = useCallback(async function (ref: HTMLVideoElement) {
       if (ref != null) {
-        const camera = await createCamera(ref, 640);
+        const camera = await createCamera(ref);
         setCamera(camera);
       }
     }, []);

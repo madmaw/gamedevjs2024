@@ -3,6 +3,7 @@ import { type Services } from 'app/services/types';
 import {
   type Route,
   RouteType,
+  type RoutingContext,
 } from 'app/types';
 import { checkExists } from 'base/preconditions';
 import { UnreachableError } from 'base/unreachable_error';
@@ -12,12 +13,12 @@ import { type Page } from './types';
 
 export function install({
   route,
+  context,
   services,
-  debug,
 }: {
   route: Route,
+  context: RoutingContext,
   services: Services,
-  debug?: boolean,
 }): Page {
   const {
     loggingService,
@@ -36,10 +37,12 @@ export function install({
         case DetectorType.Pose:
           return installEmbeddedDetector({
             detectorService: checkExists(poseDetectorService, 'must have pose detector service'),
+            context,
           });
         case DetectorType.Hand:
           return installEmbeddedDetector({
             detectorService: checkExists(handDetectorService, 'must have hand detector service'),
+            context,
           });
         default:
           throw new UnreachableError(route.detectorType);

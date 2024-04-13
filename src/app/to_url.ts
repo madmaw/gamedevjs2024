@@ -27,20 +27,12 @@ export function toUrl(route: Route, context: RoutingContext): string {
   return path + (context.debug ? `?${DEBUG_KEY}` : '');
 }
 
-export function fromUrl(url: string): [Route, RoutingContext] {
-  const urlParts = new URL(url);
-  const pathParts = urlParts.pathname.split('/').filter(function (s) {
+function fromPath(path: string): Route {
+  const pathParts = path.split('/').filter(function (s) {
     return s !== '';
   });
-  const debug = urlParts.searchParams.has(DEBUG_KEY);
   if (pathParts.length === 0) {
-    return [
-      { type: RouteType.Main },
-      {
-        environment: 'local',
-        debug,
-      },
-    ];
+    return { type: RouteType.Main };
   } else if (pathParts.length === 3 && pathParts[0] === 'detector') {
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const detectorType = pathParts[1] as DetectorType;
@@ -49,20 +41,27 @@ export function fromUrl(url: string): [Route, RoutingContext] {
     if ((detectorType === DetectorType.Hand || detectorType === DetectorType.Pose)
       && sourceType === PoseSourceType.Camera)
     {
-      return [
-        {
-          type: RouteType.EmbeddedDetector,
-          detectorType,
-          source: {
-            type: sourceType,
-          },
+      return {
+        type: RouteType.EmbeddedDetector,
+        detectorType,
+        source: {
+          type: sourceType,
         },
-        {
-          environment: 'local',
-          debug,
-        },
-      ];
+      };
     }
   }
-  throw new Error(`Invalid URL: ${url}`);
+  throw new Error(`Invalid Path: ${path}`);
+}
+
+export function fromUrl(url: string): [Route, RoutingContext] {
+  const urlParts = new URL(url);
+  const debug = urlParts.searchParams.has(DEBUG_KEY);
+  const route = fromPath(urlParts.pathname);
+  return [
+    route,
+    {
+      environment: 'local',
+      debug,
+    },
+  ];
 }
