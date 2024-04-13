@@ -1,27 +1,70 @@
 import { createPartialObserverComponent } from 'base/react/partial';
+import { UnreachableError } from 'base/unreachable_error';
 import { useMemo } from 'react';
 import { GenericAsync } from 'ui/components/async/generic';
 import {
   Size,
   SizeProvider,
 } from 'ui/metrics';
-import {
-  install as installPage,
-  Mode,
-} from './pages/install';
+import { install as installPage } from './pages/install';
+import { DetectorType } from './services/detector';
 import { install as installServices } from './services/install';
+import { type ServiceDescriptor } from './services/types';
+import { fromUrl } from './to_url';
+import {
+  type Route,
+  RouteType,
+} from './types';
 import {
   AsyncModel,
   AsyncPresenter,
 } from './ui/async/presenter';
+import { Embeds } from './ui/embed';
 import { install as installUI } from './ui/install';
 import { Display } from './ui/metrics/types';
 import { Themes } from './ui/theme/types';
 
-export function install() {
-  const services = installServices({
-    fake: true,
-  });
+function routeToServiceDescriptor(route: Route): ServiceDescriptor {
+  switch (route.type) {
+    case RouteType.Main:
+      return {
+        handDetectorService: 'embedded',
+        poseDetectorService: 'embedded',
+        loggingService: 'local',
+      };
+    case RouteType.EmbeddedDetector:
+      switch (route.detectorType) {
+        case DetectorType.Pose:
+          return {
+            handDetectorService: undefined,
+            poseDetectorService: 'local',
+            loggingService: 'local',
+          };
+        case DetectorType.Hand:
+          return {
+            handDetectorService: 'local',
+            poseDetectorService: undefined,
+            loggingService: 'local',
+          };
+        default:
+          throw new UnreachableError(route.detectorType);
+      }
+    default:
+      throw new UnreachableError(route);
+  }
+}
+
+export function install(url: string) {
+  const [
+    route,
+    context,
+  ] = fromUrl(url);
+
+  const serviceDescriptor = routeToServiceDescriptor(route);
+  const {
+    embeds,
+    services,
+  } = installServices({ services: serviceDescriptor });
 
   const {
     ThemeContextProvider,
@@ -29,11 +72,12 @@ export function install() {
     LinguiLoader,
     LinguiProvider,
   } = installUI(services);
-  const [
-    Component,
+
+  const {
+    Component: PageComponent,
     loadMessages,
-  ] = installPage({
-    mode: Mode.Main,
+  } = installPage({
+    route,
     services,
   });
 
@@ -63,12 +107,16 @@ export function install() {
       ] as const;
     }, []);
 
-    // TODO Component should be allowed to change locale
+    // TODO Component should be allowed to change locale and default theme
     return (
       <SizeProvider size={Size.Large}>
         {/* TODO: theme should also have async loading of fonts */}
         <ThemeContextProvider theme={Themes.Light}>
           <MetricsContextProvider display={Display.Comfortable}>
+            <Embeds
+              embeds={embeds}
+              context={context}
+            />
             <LinguiLoader
               asyncController={asyncController}
               loadMessages={loadMessages}
@@ -76,7 +124,7 @@ export function install() {
             >
               <ObservingGenericAsync>
                 <LinguiProvider loadMessages={loadMessages}>
-                  <Component />
+                  <PageComponent asyncController={asyncController} />
                 </LinguiProvider>
               </ObservingGenericAsync>
             </LinguiLoader>

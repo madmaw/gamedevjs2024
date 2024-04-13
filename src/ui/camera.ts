@@ -4,7 +4,9 @@ export async function createCamera(
 ): Promise<HTMLVideoElement> {
   const stream = await navigator.mediaDevices.getUserMedia({
     video: {
-      facingMode: 'user',
+      facingMode: {
+        ideal: 'user',
+      },
       width: {
         ideal: targetWidth,
       },

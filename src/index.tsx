@@ -8,7 +8,7 @@ window.addEventListener('load', function () {
   const app = createRoot(
     checkExists(appNode, 'element with id "{0}" not found', elementId),
   );
-  const App = installApp();
+  const App = installApp(document.location.href);
 
   app.render(
     <App />,

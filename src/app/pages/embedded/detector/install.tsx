@@ -1,3 +1,4 @@
+import { type Page } from 'app/pages/types';
 import {
   type DetectorService,
   PoseSourceType,
@@ -9,9 +10,7 @@ export function install<T>({
   detectorService,
 }: {
   detectorService: DetectorService<T>,
-}) {
-  // install the hands model
-
+}): Page {
   const Component = function ({
     asyncController,
   }: {
@@ -31,11 +30,18 @@ export function install<T>({
           };
         },
       );
+      // post poses to parent frame
+      const subscription = poseStream.subscribe(function (pose) {
+        postMessage(pose, document.location.href);
+      });
       return function () {
+        subscription.unsubscribe();
         poseStream.complete();
       };
-    }, []);
+    }, [asyncController]);
+
+    return null;
   };
 
-  return [Component] as const;
+  return { Component };
 }

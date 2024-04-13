@@ -3,7 +3,12 @@ import { type Pose } from '@tensorflow-models/pose-detection';
 import { type Observable } from 'rxjs';
 
 export const enum PoseSourceType {
-  Camera = 1,
+  Camera = 'camera',
+}
+
+export const enum DetectorType {
+  Pose = 'pose',
+  Hand = 'hand',
 }
 
 export type PoseSource = {

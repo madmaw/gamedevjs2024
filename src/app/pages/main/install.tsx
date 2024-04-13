@@ -1,3 +1,4 @@
+import { type Page } from 'app/pages/types';
 import { type PoseDetectorService } from 'app/services/detector';
 import { type LoggingService } from 'app/services/logging';
 import {
@@ -21,7 +22,7 @@ export function install({
 }: {
   loggingService: LoggingService,
   poseDetectorService: PoseDetectorService,
-}) {
+}): Page {
   const Play = installPlay({
     poseDetectorService,
   });
@@ -67,8 +68,8 @@ export function install({
     );
   };
 
-  return [
+  return {
     Component,
     loadMessages,
-  ] as const;
+  };
 }

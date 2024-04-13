@@ -1,30 +1,50 @@
+import { DetectorType } from 'app/services/detector';
 import { type Services } from 'app/services/types';
+import {
+  type Route,
+  RouteType,
+} from 'app/types';
+import { checkExists } from 'base/preconditions';
 import { UnreachableError } from 'base/unreachable_error';
+import { install as installEmbeddedDetector } from './embedded/detector/install';
 import { install as installMain } from './main/install';
-
-export const enum Mode {
-  Main = 1,
-}
+import { type Page } from './types';
 
 export function install({
-  mode,
+  route,
   services,
+  debug,
 }: {
-  mode: Mode,
+  route: Route,
   services: Services,
-}) {
+  debug?: boolean,
+}): Page {
   const {
     loggingService,
     poseDetectorService,
+    handDetectorService,
   } = services;
 
-  switch (mode) {
-    case Mode.Main:
+  switch (route.type) {
+    case RouteType.Main:
       return installMain({
         loggingService,
-        poseDetectorService,
+        poseDetectorService: checkExists(poseDetectorService, 'must have pose detector service'),
       });
+    case RouteType.EmbeddedDetector:
+      switch (route.detectorType) {
+        case DetectorType.Pose:
+          return installEmbeddedDetector({
+            detectorService: checkExists(poseDetectorService, 'must have pose detector service'),
+          });
+        case DetectorType.Hand:
+          return installEmbeddedDetector({
+            detectorService: checkExists(handDetectorService, 'must have hand detector service'),
+          });
+        default:
+          throw new UnreachableError(route.detectorType);
+      }
     default:
-      throw new UnreachableError(mode);
+      throw new UnreachableError(route);
   }
 }
