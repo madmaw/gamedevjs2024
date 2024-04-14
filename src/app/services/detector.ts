@@ -1,5 +1,7 @@
-import { type Hand } from '@tensorflow-models/hand-pose-detection';
-import { type Pose } from '@tensorflow-models/pose-detection';
+import {
+  type BodyScan,
+  type HandScan,
+} from 'app/domain/pose';
 import { type Observable } from 'rxjs';
 
 export const enum PoseSourceType {
@@ -9,6 +11,7 @@ export const enum PoseSourceType {
 export const enum DetectorType {
   Pose = 'pose',
   Hand = 'hand',
+  Aggregate = 'aggregate',
 }
 
 export type PoseSource = {
@@ -29,6 +32,6 @@ export type DetectorService<T> = {
   loadDetector(): Promise<Detector<T>>,
 };
 
-export type PoseDetectorService = DetectorService<readonly Pose[]>;
+export type BodyDetectorService = DetectorService<BodyScan>;
 
-export type HandDetectorService = DetectorService<readonly Hand[]>;
+export type HandDetectorService = DetectorService<HandScan>;

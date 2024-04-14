@@ -3,8 +3,8 @@ import {
   type PlayProps,
 } from 'app/pages/main/play/types';
 import {
+  type BodyDetectorService,
   type HandDetectorService,
-  type PoseDetectorService,
   PoseSourceType,
 } from 'app/services/detector';
 import {
@@ -23,7 +23,7 @@ export function install({
   handDetectorService,
   Play,
 }: {
-  poseDetectorService: PoseDetectorService,
+  poseDetectorService: BodyDetectorService,
   handDetectorService: HandDetectorService,
   Play: Play,
 }) {

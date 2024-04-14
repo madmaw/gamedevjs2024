@@ -1,4 +1,4 @@
-export type Keypoint3D = {
+export type Keypoint = {
   readonly relativePosition: readonly [number, number, number],
   readonly screenPosition: readonly [number, number],
   readonly score: number,
@@ -6,9 +6,13 @@ export type Keypoint3D = {
 
 export type Pose<Kind, ID extends string | number | symbol> = {
   readonly kind: Kind,
-  readonly keypoints: Partial<Record<ID, Keypoint3D>>,
-  readonly score: number,
+  readonly keypoints: Partial<Record<ID, Keypoint>>,
+  readonly score: number | undefined,
+};
+
+export type Scan<Kind, ID extends string | number | symbol> = {
   readonly epoch: number,
+  readonly poses: readonly Pose<Kind, ID>[],
 };
 
 export const enum HandID {
@@ -41,6 +45,7 @@ export const enum HandKind {
 }
 
 export type HandPose = Pose<HandKind, HandID>;
+export type HandScan = Scan<HandKind, HandID>;
 
 export const enum BodyID {
   Nose = 'nose',
@@ -83,6 +88,7 @@ export enum BodyKind {
 }
 
 export type BodyPose = Pose<BodyKind, BodyID>;
+export type BodyScan = Scan<BodyKind, BodyID>;
 
 // TODO remove unused keypoints
 export const enum AggregateID {
@@ -170,3 +176,4 @@ export const enum AggregateKind {
 }
 
 export type AggregatePose = Pose<AggregateKind, AggregateID>;
+export type AggregateScan = Scan<AggregateKind, AggregateID>;

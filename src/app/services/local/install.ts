@@ -3,21 +3,21 @@ import {
   type ServiceDescriptor,
   type Services,
 } from 'app/services/types';
+import { TFJSBodyDetectorService } from './detector/tfjs/body';
 import { TFJSHandDetectorService } from './detector/tfjs/hand';
-import { TFJSPoseDetectorService } from './detector/tfjs/pose';
 import { ConsoleLoggingService } from './logging';
 
 export function install({
   services: {
     handDetectorService,
-    poseDetectorService,
+    bodyDetectorService: poseDetectorService,
   },
 }: { services: ServiceDescriptor }): Partial<Services> {
   const loggingService: LoggingService = new ConsoleLoggingService({});
   return {
     loggingService,
-    poseDetectorService: poseDetectorService === 'local'
-      ? new TFJSPoseDetectorService(loggingService)
+    bodyDetectorService: poseDetectorService === 'local'
+      ? new TFJSBodyDetectorService(loggingService)
       : undefined,
     handDetectorService: handDetectorService === 'local'
       ? new TFJSHandDetectorService(loggingService)

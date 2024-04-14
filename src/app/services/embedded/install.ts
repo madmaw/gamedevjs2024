@@ -1,5 +1,7 @@
-import { type Hand } from '@tensorflow-models/hand-pose-detection';
-import { type Pose } from '@tensorflow-models/pose-detection';
+import {
+  type BodyScan,
+  type HandScan,
+} from 'app/domain/pose';
 import { DetectorType } from 'app/services/detector';
 import {
   type PartialServicesAndEmbeds,
@@ -20,7 +22,7 @@ export function install({
   // TODO only start listening when there are observers on the messages subject
   if (
     services.handDetectorService === 'embedded'
-    || services.poseDetectorService === 'embedded'
+    || services.bodyDetectorService === 'embedded'
   ) {
     const messages = new Subject<EmbeddedMessage>();
     window.addEventListener('message', function (e: MessageEvent) {
@@ -33,14 +35,14 @@ export function install({
     });
 
     const handDetectorService = services.handDetectorService === 'embedded'
-      ? new EmbeddedDetectorService<readonly Hand[]>({
+      ? new EmbeddedDetectorService<HandScan>({
         type: RouteType.EmbeddedDetector,
         detectorType: DetectorType.Hand,
       }, messages)
       : undefined;
 
-    const poseDetectorService = services.poseDetectorService === 'embedded'
-      ? new EmbeddedDetectorService<readonly Pose[]>({
+    const poseDetectorService = services.bodyDetectorService === 'embedded'
+      ? new EmbeddedDetectorService<BodyScan>({
         type: RouteType.EmbeddedDetector,
         detectorType: DetectorType.Pose,
       }, messages)
@@ -49,7 +51,7 @@ export function install({
     return {
       services: {
         handDetectorService,
-        poseDetectorService,
+        bodyDetectorService: poseDetectorService,
       },
       embeds: [
         handDetectorService,

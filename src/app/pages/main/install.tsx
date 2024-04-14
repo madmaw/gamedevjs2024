@@ -3,8 +3,8 @@ import {
   type Page,
 } from 'app/pages/types';
 import {
+  type BodyDetectorService,
   type HandDetectorService,
-  type PoseDetectorService,
 } from 'app/services/detector';
 import { type LoggingService } from 'app/services/logging';
 import {
@@ -28,7 +28,7 @@ export function install({
   handDetectorService,
 }: {
   loggingService: LoggingService,
-  poseDetectorService: PoseDetectorService,
+  poseDetectorService: BodyDetectorService,
   handDetectorService: HandDetectorService,
 }): Page {
   const Play = installPlay({

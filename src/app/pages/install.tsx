@@ -22,7 +22,7 @@ export function install({
 }): Page {
   const {
     loggingService,
-    poseDetectorService,
+    bodyDetectorService: poseDetectorService,
     handDetectorService,
   } = services;
 

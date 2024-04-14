@@ -1,4 +1,5 @@
 import styled from '@emotion/styled';
+import { BodyID } from 'app/domain/pose';
 import { type PlayProps } from 'app/pages/main/play/types';
 import { exists } from 'base/exists';
 import {
@@ -7,10 +8,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import {
-  Matrix4,
-  Vector3,
-} from 'three';
 import { Alignment } from 'ui/alignment';
 import { createCamera } from 'ui/camera';
 import { Aligner } from 'ui/components/aligner';
@@ -101,11 +98,11 @@ export function install() {
     useEffect(function () {
       const s = handStream.subscribe({
         next(hands) {
-          console.log(hands);
+          console.log(hands.poses.length, hands);
         },
       });
       const subscription = poseStream.subscribe({
-        next(poses) {
+        next({ poses }) {
           setDetections((detections) => {
             const now = new Date();
             const newDetections = [
@@ -124,28 +121,35 @@ export function install() {
               keypointCanvas.current.height = camera.videoHeight;
               ctx.clearRect(0, 0, keypointCanvas.current.width, keypointCanvas.current.height);
               ctx.strokeStyle = 'black';
-              poses.forEach(function (pose) {
-                const eyes = pose.keypoints.filter(function (keypoint) {
-                  return keypoint.name?.endsWith('eye');
-                }).sort((a, b) => a.x - b.x);
+              poses.forEach(function ({
+                keypoints,
+              }) {
+                const eyes = [
+                  keypoints[BodyID.LeftEye],
+                  keypoints[BodyID.RightEye],
+                ].filter(exists);
                 const eyeDistance = eyes.length > 1
-                  ? Math.sqrt(Math.pow(eyes[0].x - eyes[1].x, 2) + Math.pow(eyes[0].y - eyes[1].y, 2))
+                  ? Math.sqrt(
+                    Math.pow(eyes[0].screenPosition[0] - eyes[1].screenPosition[0], 2)
+                      + Math.pow(eyes[0].screenPosition[1] - eyes[1].screenPosition[1], 2),
+                  )
                   : 0;
-                const hands2D = getHands(pose.keypoints);
-                const hands3D = getHands(pose.keypoints3D);
 
                 ctx.font = `${eyeDistance * 2}px serif`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
 
                 if (eyes.length > 1) {
-                  const angle = Math.atan2(eyes[1].y - eyes[0].y, eyes[1].x - eyes[0].x);
+                  const angle = Math.atan2(
+                    eyes[1].screenPosition[1] - eyes[0].screenPosition[1],
+                    eyes[1].screenPosition[0] - eyes[0].screenPosition[0],
+                  );
                   const [
                     eyeX,
                     eyeY,
                   ] = [
-                    (eyes[0].x + eyes[1].x) / 2,
-                    (eyes[0].y + eyes[1].y) / 2,
+                    (eyes[0].screenPosition[0] + eyes[1].screenPosition[0]) / 2,
+                    (eyes[0].screenPosition[1] + eyes[1].screenPosition[1]) / 2,
                   ];
                   ctx.save();
                   ctx.globalAlpha = (eyes[0].score ?? 1) * (eyes[1].score ?? 1);
@@ -155,68 +159,68 @@ export function install() {
                   ctx.restore();
                 }
 
-                hands3D.forEach((hand3D, i) => {
-                  const hand2D = hands2D[i];
-                  if (hand3D && hand2D) {
-                    const [
-                      wrist,
-                      index,
-                      pinky,
-                    ] = hand3D.map(function ({
-                      x,
-                      y,
-                      z,
-                    }) {
-                      return new Vector3(x, -y, z);
-                    });
+                //   hands3D.forEach((hand3D, i) => {
+                //     const hand2D = hands2D[i];
+                //     if (hand3D && hand2D) {
+                //       const [
+                //         wrist,
+                //         index,
+                //         pinky,
+                //       ] = hand3D.map(function ({
+                //         x,
+                //         y,
+                //         z,
+                //       }) {
+                //         return new Vector3(x, -y, z);
+                //       });
 
-                    const toPinky = pinky.clone().sub(wrist).normalize();
-                    const toIndex = index.clone().sub(wrist).normalize();
+                //       const toPinky = pinky.clone().sub(wrist).normalize();
+                //       const toIndex = index.clone().sub(wrist).normalize();
 
-                    const normal = toPinky.clone().cross(toIndex).normalize();
-                    const rotationAxis = new Vector3(0, 0, 1).cross(normal).normalize();
-                    const rotationAngle = new Vector3(0, 0, 1).angleTo(normal);
-                    const matrix = new Matrix4().makeRotationAxis(rotationAxis, rotationAngle);
+                //       const normal = toPinky.clone().cross(toIndex).normalize();
+                //       const rotationAxis = new Vector3(0, 0, 1).cross(normal).normalize();
+                //       const rotationAngle = new Vector3(0, 0, 1).angleTo(normal);
+                //       const matrix = new Matrix4().makeRotationAxis(rotationAxis, rotationAngle);
 
-                    // const base = new Vector3(i ? 1 : -1, 0, 0);
+                //       // const base = new Vector3(i ? 1 : -1, 0, 0);
 
-                    // const rotationAxis = base.clone().cross(toIndex).normalize();
-                    // const rotationAngle = base.angleTo(toIndex);
-                    // const matrix = new Matrix4().makeRotationAxis(rotationAxis, rotationAngle);
+                //       // const rotationAxis = base.clone().cross(toIndex).normalize();
+                //       // const rotationAngle = base.angleTo(toIndex);
+                //       // const matrix = new Matrix4().makeRotationAxis(rotationAxis, rotationAngle);
 
-                    ctx.save();
-                    ctx.translate(hand2D[3].x, hand2D[3].y);
-                    ctx.transform(
-                      matrix.elements[0],
-                      matrix.elements[1],
-                      matrix.elements[4],
-                      matrix.elements[5],
-                      matrix.elements[12],
-                      matrix.elements[13],
-                    );
-                    if (i === 0) {
-                      ctx.scale(-1, 1);
-                    }
+                //       ctx.save();
+                //       ctx.translate(hand2D[3].x, hand2D[3].y);
+                //       ctx.transform(
+                //         matrix.elements[0],
+                //         matrix.elements[1],
+                //         matrix.elements[4],
+                //         matrix.elements[5],
+                //         matrix.elements[12],
+                //         matrix.elements[13],
+                //       );
+                //       if (i === 0) {
+                //         ctx.scale(-1, 1);
+                //       }
 
-                    ctx.globalAlpha = hand3D[3].score ?? 1;
-                    ctx.fillText('👉', 0, 0);
-                    ctx.restore();
+                //       ctx.globalAlpha = hand3D[3].score ?? 1;
+                //       ctx.fillText('👉', 0, 0);
+                //       ctx.restore();
 
-                    hand2D.forEach(function (keypoint, i) {
-                      const {
-                        x,
-                        y,
-                      } = keypoint;
-                      const { z } = hand3D[i];
-                      const handRadius = 5 * Math.pow(2, Math.max(1, Math.pow((z ?? wrist.z) / wrist.z, 4)));
-                      ctx.globalAlpha = keypoint.score ?? 1;
-                      ctx.beginPath();
-                      ctx.arc(x, y, handRadius, 0, 2 * Math.PI);
-                      ctx.fillStyle = COLORS[i];
-                      ctx.fill();
-                    });
-                  }
-                });
+                //       hand2D.forEach(function (keypoint, i) {
+                //         const {
+                //           x,
+                //           y,
+                //         } = keypoint;
+                //         const { z } = hand3D[i];
+                //         const handRadius = 5 * Math.pow(2, Math.max(1, Math.pow((z ?? wrist.z) / wrist.z, 4)));
+                //         ctx.globalAlpha = keypoint.score ?? 1;
+                //         ctx.beginPath();
+                //         ctx.arc(x, y, handRadius, 0, 2 * Math.PI);
+                //         ctx.fillStyle = COLORS[i];
+                //         ctx.fill();
+                //       });
+                //     }
+                //   });
               });
             }
           }

@@ -38,7 +38,7 @@ function routeToServiceDescriptor(route: Route): ServiceDescriptor {
       return {
         handDetectorService: 'local',
         // only need one pose detector to be embedded, can run other on main
-        poseDetectorService: 'embedded',
+        bodyDetectorService: 'embedded',
         loggingService: 'local',
       };
     case RouteType.EmbeddedDetector:
@@ -46,13 +46,13 @@ function routeToServiceDescriptor(route: Route): ServiceDescriptor {
         case DetectorType.Pose:
           return {
             handDetectorService: undefined,
-            poseDetectorService: 'local',
+            bodyDetectorService: 'local',
             loggingService: 'local',
           };
         case DetectorType.Hand:
           return {
             handDetectorService: 'local',
-            poseDetectorService: undefined,
+            bodyDetectorService: undefined,
             loggingService: 'local',
           };
         case DetectorType.Aggregate:
