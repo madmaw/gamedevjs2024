@@ -40,8 +40,8 @@ export const enum HandID {
 }
 
 export const enum HandKind {
-  Left = 'Left',
-  Right = 'Right',
+  Left = 'left',
+  Right = 'right',
 }
 
 export type HandPose = Pose<HandKind, HandID>;
@@ -91,7 +91,8 @@ export type BodyPose = Pose<BodyKind, BodyID>;
 export type BodyScan = Scan<BodyKind, BodyID>;
 
 // TODO remove unused keypoints
-export const enum AggregateID {
+// cortical as in "cortical homunculus" with focus on hands and face
+export const enum CorticalID {
   // body (excluding hands)
   Nose = 'nose',
   LeftEyeInner = 'left_eye_inner',
@@ -106,7 +107,7 @@ export const enum AggregateID {
   MouthRight = 'mouth_right',
   LeftShoulder = 'left_shoulder',
   RightShoulder = 'right_shoulder',
-  LeftELbow = 'left_elbow',
+  LeftElbow = 'left_elbow',
   RightElbow = 'right_elbow',
   LeftWrist = 'left_wrist',
   RightWrist = 'right_wrist',
@@ -171,9 +172,9 @@ export const enum AggregateID {
   RightPinkyFingerTip = 'right_pinky_finger_tip',
 }
 
-export const enum AggregateKind {
-  Aggregate = 'aggregate',
+export const enum CorticalKind {
+  Cortical = 'cortical',
 }
 
-export type AggregatePose = Pose<AggregateKind, AggregateID>;
-export type AggregateScan = Scan<AggregateKind, AggregateID>;
+export type CorticalPose = Pose<CorticalKind, CorticalID>;
+export type CorticalScan = Scan<CorticalKind, CorticalID>;

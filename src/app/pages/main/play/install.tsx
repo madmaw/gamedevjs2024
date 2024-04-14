@@ -1,21 +1,15 @@
-import {
-  type BodyDetectorService,
-  type HandDetectorService,
-} from 'app/services/detector';
+import { type CorticalDetectorService } from 'app/services/detector';
 import { install as installDebug } from './debug/install';
 import { install as installInit } from './init/install';
 
 export function install({
-  poseDetectorService,
-  handDetectorService,
+  corticalDetectorService,
 }: {
-  poseDetectorService: BodyDetectorService,
-  handDetectorService: HandDetectorService,
+  corticalDetectorService: CorticalDetectorService,
 }) {
   const Display = installDebug();
   return installInit({
-    poseDetectorService,
-    handDetectorService,
+    corticalDetectorService,
     Play: Display,
   });
 }

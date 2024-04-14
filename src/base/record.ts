@@ -12,18 +12,22 @@ export function reverse<
   }, {} as Record<Value, Key>);
 }
 
-export function combine<
+export function rollup<
   R extends Record<K, V>,
   K extends string | number | symbol = keyof R,
   V = R[K],
 >(...records: Partial<R>[]): R {
   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-  return records.reduce<Partial<R>>((acc, record) => {
+  return records.slice(1).reduce<Partial<R>>((acc, record) => {
     Object.keys(record).forEach((key) => {
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       const k = key as K;
       acc[k] = acc[k] ?? record[k];
     });
     return acc;
-  }, {}) as R;
+  }, records[0]) as R;
 }
+
+export type Mutable<T> = {
+  -readonly [K in keyof T]: T[K];
+};

@@ -5,7 +5,7 @@ import {
 import { DetectorType } from 'app/services/detector';
 import {
   type PartialServicesAndEmbeds,
-  type ServiceDescriptor,
+  type ServicesDescriptor,
 } from 'app/services/types';
 import { fromUrl } from 'app/to_url';
 import { RouteType } from 'app/types';
@@ -15,14 +15,14 @@ import { EmbeddedDetectorService } from './detector';
 import { type EmbeddedMessage } from './types';
 
 export function install({
-  services,
+  descriptors,
 }: {
-  services: ServiceDescriptor,
+  descriptors: ServicesDescriptor,
 }): PartialServicesAndEmbeds {
   // TODO only start listening when there are observers on the messages subject
   if (
-    services.handDetectorService === 'embedded'
-    || services.bodyDetectorService === 'embedded'
+    descriptors.handDetectorService === 'embedded'
+    || descriptors.bodyDetectorService === 'embedded'
   ) {
     const messages = new Subject<EmbeddedMessage>();
     window.addEventListener('message', function (e: MessageEvent) {
@@ -34,14 +34,14 @@ export function install({
       });
     });
 
-    const handDetectorService = services.handDetectorService === 'embedded'
+    const handDetectorService = descriptors.handDetectorService === 'embedded'
       ? new EmbeddedDetectorService<HandScan>({
         type: RouteType.EmbeddedDetector,
         detectorType: DetectorType.Hand,
       }, messages)
       : undefined;
 
-    const poseDetectorService = services.bodyDetectorService === 'embedded'
+    const poseDetectorService = descriptors.bodyDetectorService === 'embedded'
       ? new EmbeddedDetectorService<BodyScan>({
         type: RouteType.EmbeddedDetector,
         detectorType: DetectorType.Pose,

@@ -1,5 +1,6 @@
 import {
   type BodyScan,
+  type CorticalScan,
   type HandScan,
 } from 'app/domain/pose';
 import { type Observable } from 'rxjs';
@@ -35,3 +36,5 @@ export type DetectorService<T> = {
 export type BodyDetectorService = DetectorService<BodyScan>;
 
 export type HandDetectorService = DetectorService<HandScan>;
+
+export type CorticalDetectorService = DetectorService<CorticalScan>;

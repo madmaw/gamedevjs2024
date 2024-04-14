@@ -3,8 +3,7 @@ import {
   type PlayProps,
 } from 'app/pages/main/play/types';
 import {
-  type BodyDetectorService,
-  type HandDetectorService,
+  type CorticalDetectorService,
   PoseSourceType,
 } from 'app/services/detector';
 import {
@@ -19,12 +18,10 @@ import { PlayFailure } from './failure';
 import { PlayLoading } from './loading';
 
 export function install({
-  poseDetectorService,
-  handDetectorService,
+  corticalDetectorService,
   Play,
 }: {
-  poseDetectorService: BodyDetectorService,
-  handDetectorService: HandDetectorService,
+  corticalDetectorService: CorticalDetectorService,
   Play: Play,
 }) {
   const asyncPresenter = new AsyncPresenter<PlayProps>();
@@ -41,39 +38,21 @@ export function install({
     }, []);
 
     useAsyncEffect(async function () {
-      const poseStream = await asyncPresenter.append(
+      const corticalStream = await asyncPresenter.append(
         asyncModel,
         async function () {
-          const detector = await poseDetectorService.loadDetector();
+          const detector = await corticalDetectorService.loadDetector();
           return detector.detect({
             type: PoseSourceType.Camera,
           });
         },
-        function (value, poseStream) {
-          value.poseStream = poseStream;
+        function (value, corticalStream) {
+          value.corticalStream = corticalStream;
           return value;
         },
       );
       return function () {
-        poseStream.complete();
-      };
-    }, [asyncModel]);
-    useAsyncEffect(async function () {
-      const handStream = await asyncPresenter.append(
-        asyncModel,
-        async function () {
-          const detector = await handDetectorService.loadDetector();
-          return detector.detect({
-            type: PoseSourceType.Camera,
-          });
-        },
-        function (value, poseStream) {
-          value.handStream = poseStream;
-          return value;
-        },
-      );
-      return function () {
-        handStream.complete();
+        corticalStream.complete();
       };
     }, [asyncModel]);
     const ObservingAsync = usePartialObserverComponent(

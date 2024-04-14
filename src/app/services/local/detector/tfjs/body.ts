@@ -97,7 +97,7 @@ class TFJSBodyDetector extends TFJSBaseDetector<BodyScan> {
 export class TFJSBodyDetectorService extends TFJSBaseDetectorService<BodyScan> {
   constructor(
     private readonly loggingService: LoggingService,
-    private readonly modelType: 'lite' | 'full' | 'heavy' = 'lite',
+    private readonly modelType: 'lite' | 'full' | 'heavy' = 'full',
   ) {
     super();
   }

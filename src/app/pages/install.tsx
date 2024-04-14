@@ -22,22 +22,22 @@ export function install({
 }): Page {
   const {
     loggingService,
-    bodyDetectorService: poseDetectorService,
+    bodyDetectorService,
     handDetectorService,
+    corticalDetectorService,
   } = services;
 
   switch (route.type) {
     case RouteType.Main:
       return installMain({
         loggingService,
-        poseDetectorService: checkExists(poseDetectorService, 'must have pose detector service'),
-        handDetectorService: checkExists(handDetectorService, 'must have hand detector service'),
+        corticalDetectorService: checkExists(corticalDetectorService, 'must have pose detector service'),
       });
     case RouteType.EmbeddedDetector:
       switch (route.detectorType) {
         case DetectorType.Pose:
           return installEmbeddedDetector({
-            detectorService: checkExists(poseDetectorService, 'must have pose detector service'),
+            detectorService: checkExists(bodyDetectorService, 'must have pose detector service'),
             context,
           });
         case DetectorType.Hand:

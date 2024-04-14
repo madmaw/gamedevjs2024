@@ -1,6 +1,6 @@
 export async function createCamera(
   camera: HTMLVideoElement = document.createElement('video'),
-  targetWidth: number = 320,
+  targetWidth: number = 640,
 ): Promise<HTMLVideoElement> {
   const stream = await navigator.mediaDevices.getUserMedia({
     video: {

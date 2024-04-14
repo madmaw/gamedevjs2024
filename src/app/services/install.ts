@@ -1,20 +1,34 @@
-import { combine } from 'base/record';
+import { rollup } from 'base/record';
+import { createDeferredServices } from './deferred';
 import { install as installEmbedded } from './embedded/install';
 import { install as installFakes } from './fake/install';
 import { install as installLocal } from './local/install';
 import {
-  type ServiceDescriptor,
+  type Services,
   type ServicesAndEmbeds,
+  type ServicesDescriptor,
 } from './types';
 
-export function install(args: { services: ServiceDescriptor }): ServicesAndEmbeds {
-  const fakeServices = installFakes(args);
-  const localServices = installLocal(args);
+export function install({ descriptors }: { descriptors: ServicesDescriptor }): ServicesAndEmbeds {
+  const immediateServices: Partial<Services> = {};
+  const deferredServices = createDeferredServices(immediateServices);
+
+  const fakeServices = installFakes({
+    services: deferredServices,
+    descriptors,
+  });
+  const localServices = installLocal({
+    services: deferredServices,
+    descriptors,
+  });
   const {
     services: embeddedServices,
     embeds: embeddedEmbeds,
-  } = installEmbedded(args);
-  const services = combine(
+  } = installEmbedded({
+    descriptors,
+  });
+  const services = rollup(
+    immediateServices,
     localServices,
     embeddedServices,
     fakeServices,

@@ -17,7 +17,7 @@ import {
 } from './pages/types';
 import { DetectorType } from './services/detector';
 import { install as installServices } from './services/install';
-import { type ServiceDescriptor } from './services/types';
+import { type ServicesDescriptor } from './services/types';
 import { fromUrl } from './to_url';
 import {
   type Route,
@@ -32,27 +32,30 @@ import { install as installUI } from './ui/install';
 import { Display } from './ui/metrics/types';
 import { Themes } from './ui/theme/types';
 
-function routeToServiceDescriptor(route: Route): ServiceDescriptor {
+function routeToServicesDescriptor(route: Route): ServicesDescriptor {
   switch (route.type) {
     case RouteType.Main:
       return {
-        handDetectorService: 'local',
         // only need one pose detector to be embedded, can run other on main
         bodyDetectorService: 'embedded',
+        handDetectorService: 'local',
+        corticalDetectorService: 'local',
         loggingService: 'local',
       };
     case RouteType.EmbeddedDetector:
       switch (route.detectorType) {
         case DetectorType.Pose:
           return {
-            handDetectorService: undefined,
             bodyDetectorService: 'local',
+            handDetectorService: undefined,
+            corticalDetectorService: undefined,
             loggingService: 'local',
           };
         case DetectorType.Hand:
           return {
-            handDetectorService: 'local',
             bodyDetectorService: undefined,
+            handDetectorService: 'local',
+            corticalDetectorService: undefined,
             loggingService: 'local',
           };
         case DetectorType.Aggregate:
@@ -72,11 +75,11 @@ export function install(url: string) {
     context,
   ] = fromUrl(url);
 
-  const serviceDescriptor = routeToServiceDescriptor(route);
+  const servicesDescriptor = routeToServicesDescriptor(route);
   const {
     embeds,
     services,
-  } = installServices({ services: serviceDescriptor });
+  } = installServices({ descriptors: servicesDescriptor });
 
   const {
     ThemeContextProvider,

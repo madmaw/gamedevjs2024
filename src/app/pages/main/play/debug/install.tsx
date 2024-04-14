@@ -1,7 +1,11 @@
 import styled from '@emotion/styled';
-import { BodyID } from 'app/domain/pose';
+import {
+  BodyID,
+  CorticalID,
+} from 'app/domain/pose';
 import { type PlayProps } from 'app/pages/main/play/types';
 import { exists } from 'base/exists';
+import Color from 'colorjs.io';
 import {
   useCallback,
   useEffect,
@@ -38,44 +42,20 @@ const KeypointCanvas = styled.canvas`
   z-index: 1;  
 `;
 
-const HAND_PREFIXES = [
-  'left_',
-  'right_',
-];
-
-const HAND_POSTFIXES = [
-  'wrist',
-  'pinky',
-  'thumb',
-  'index',
-];
-
-const COLORS = [
-  'black',
-  'pink',
-  'green',
-  'yellow',
-];
-
-function getHands<
-  K extends { readonly name?: string },
->(keypoints: readonly K[] | undefined): (K[] | undefined)[] {
-  return HAND_PREFIXES.map(function (prefix) {
-    return HAND_POSTFIXES.map(function (postfix) {
-      const name = prefix + postfix;
-      return keypoints?.find(function (keypoint) {
-        return keypoint.name === name;
-      });
-    });
-  }).map(function (hand) {
-    return hand.every(exists) ? hand : undefined;
-  });
-}
+const POIs: Partial<Record<CorticalID, Color>> = {
+  [CorticalID.RightWrist]: new Color('white'),
+  // [CorticalID.RightElbow]: new Color('white'),
+  [CorticalID.RightIndexFingerTip]: new Color('yellow'),
+  // [CorticalID.RightThumbTip]: new Color('orange'),
+  [CorticalID.LeftElbow]: new Color('white'),
+  // [CorticalID.LeftWrist]: new Color('blue'),
+  // [CorticalID.LeftIndexFingerTip]: new Color('magenta'),
+  // [CorticalID.LeftThumbTip]: new Color('cyan'),
+};
 
 export function install() {
   return function ({
-    poseStream,
-    handStream,
+    corticalStream,
   }: PlayProps) {
     const [
       detections,
@@ -96,12 +76,7 @@ export function install() {
     const keypointCanvas = useRef<HTMLCanvasElement>(null);
 
     useEffect(function () {
-      const s = handStream.subscribe({
-        next(hands) {
-          console.log(hands.poses.length, hands);
-        },
-      });
-      const subscription = poseStream.subscribe({
+      const subscription = corticalStream.subscribe({
         next({ poses }) {
           setDetections((detections) => {
             const now = new Date();
@@ -157,6 +132,35 @@ export function install() {
                   ctx.rotate(angle);
                   ctx.fillText('👀', 0, 0);
                   ctx.restore();
+                }
+
+                ctx.font = '30px serif';
+                for (const key in POIs) {
+                  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+                  const corticalID = key as CorticalID;
+                  const color = POIs[corticalID];
+                  const poi = keypoints[corticalID];
+                  if (poi && color) {
+                    const r = 10 - 5 * Math.pow(poi.relativePosition[2], 3);
+                    ctx.fillStyle = color.toString();
+                    ctx.beginPath();
+                    ctx.arc(
+                      poi.screenPosition[0],
+                      poi.screenPosition[1],
+                      r,
+                      0,
+                      2 * Math.PI,
+                    );
+                    ctx.fill();
+                    if (poi.score) {
+                      ctx.save();
+                      ctx.translate(poi.screenPosition[0], poi.screenPosition[1]);
+                      ctx.scale(-1, 1);
+                      // ctx.fillText((poi.score * 100).toFixed(0), 0, -r * 2);
+                      ctx.fillText(poi.relativePosition.map(v => Math.round(v * 100)).join(), 0, -r * 2);
+                      ctx.restore();
+                    }
+                  }
                 }
 
                 //   hands3D.forEach((hand3D, i) => {
@@ -228,8 +232,7 @@ export function install() {
       });
       return subscription.unsubscribe.bind(subscription);
     }, [
-      poseStream,
-      handStream,
+      corticalStream,
       camera,
     ]);
     const detectionsPerSecond = detections.length > 10

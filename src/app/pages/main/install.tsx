@@ -2,10 +2,7 @@ import {
   type Initializer,
   type Page,
 } from 'app/pages/types';
-import {
-  type BodyDetectorService,
-  type HandDetectorService,
-} from 'app/services/detector';
+import { type CorticalDetectorService } from 'app/services/detector';
 import { type LoggingService } from 'app/services/logging';
 import {
   StackModel,
@@ -24,16 +21,13 @@ import { install as installPlay } from './play/install';
 
 export function install({
   loggingService,
-  poseDetectorService,
-  handDetectorService,
+  corticalDetectorService,
 }: {
   loggingService: LoggingService,
-  poseDetectorService: BodyDetectorService,
-  handDetectorService: HandDetectorService,
+  corticalDetectorService: CorticalDetectorService,
 }): Page {
   const Play = installPlay({
-    poseDetectorService,
-    handDetectorService,
+    corticalDetectorService,
   });
   const Home = installHome({
     Play,

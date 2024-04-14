@@ -1,26 +1,39 @@
 import { type LoggingService } from 'app/services/logging';
 import {
-  type ServiceDescriptor,
   type Services,
+  type ServicesDescriptor,
 } from 'app/services/types';
+import { AggregateCorticalDetectorService } from './detector/aggregate/cortical';
 import { TFJSBodyDetectorService } from './detector/tfjs/body';
 import { TFJSHandDetectorService } from './detector/tfjs/hand';
 import { ConsoleLoggingService } from './logging';
 
 export function install({
   services: {
-    handDetectorService,
-    bodyDetectorService: poseDetectorService,
+    loggingService: deferredLoggingService,
+    handDetectorService: deferredHandDetectorService,
+    bodyDetectorService: deferredBodyDetectorService,
   },
-}: { services: ServiceDescriptor }): Partial<Services> {
-  const loggingService: LoggingService = new ConsoleLoggingService({});
+  descriptors: {
+    handDetectorService,
+    bodyDetectorService,
+    corticalDetectorService,
+  },
+}: { services: Services, descriptors: ServicesDescriptor }): Partial<Services> {
+  const consoleLoggingService: LoggingService = new ConsoleLoggingService({});
   return {
-    loggingService,
-    bodyDetectorService: poseDetectorService === 'local'
-      ? new TFJSBodyDetectorService(loggingService)
+    loggingService: consoleLoggingService,
+    bodyDetectorService: bodyDetectorService === 'local'
+      ? new TFJSBodyDetectorService(deferredLoggingService)
       : undefined,
     handDetectorService: handDetectorService === 'local'
-      ? new TFJSHandDetectorService(loggingService)
+      ? new TFJSHandDetectorService(deferredLoggingService)
+      : undefined,
+    corticalDetectorService: corticalDetectorService === 'local'
+      ? new AggregateCorticalDetectorService(
+        deferredBodyDetectorService!,
+        deferredHandDetectorService!,
+      )
       : undefined,
   };
 }

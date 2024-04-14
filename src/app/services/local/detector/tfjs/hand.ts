@@ -2,7 +2,7 @@ import { type HandDetector } from '@tensorflow-models/hand-pose-detection';
 import { type PoseDetectorInput } from '@tensorflow-models/pose-detection';
 import {
   type HandID,
-  type HandKind,
+  HandKind,
   type HandPose,
   type HandScan,
   type Keypoint,
@@ -12,12 +12,25 @@ import { type LoggingService } from 'app/services/logging';
 import { delay } from 'base/delay';
 import { exists } from 'base/exists';
 import { checkState } from 'base/preconditions';
+import { UnreachableError } from 'base/unreachable_error';
 import {
   TFJSBaseDetector,
   TFJSBaseDetectorService,
 } from './base';
 
 const LOCAL_MEDIA_PIPE_PATH = '/@mediapipe/hands';
+
+function toKind(handedness: 'Left' | 'Right') {
+  // for whatever reason, the model returns the opposite of what we expect
+  switch (handedness) {
+    case 'Left':
+      return HandKind.Right;
+    case 'Right':
+      return HandKind.Left;
+    default:
+      throw new UnreachableError(handedness);
+  }
+}
 
 class TFJSHandDetector extends TFJSBaseDetector<HandScan> {
   constructor(
@@ -37,8 +50,8 @@ class TFJSHandDetector extends TFJSBaseDetector<HandScan> {
     const poses = hands.map<HandPose | undefined>(hand => {
       const keypoints3D = hand.keypoints3D;
       const score = hand.score;
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-      const kind = hand.handedness as HandKind;
+
+      const kind = toKind(hand.handedness);
       if (keypoints3D == null) {
         return;
       }
@@ -48,7 +61,7 @@ class TFJSHandDetector extends TFJSBaseDetector<HandScan> {
           y,
           z,
           name,
-          score,
+          score: keypointScore,
         }, i) => {
           const keypoint2D = hand.keypoints[i];
           checkState(
@@ -57,7 +70,7 @@ class TFJSHandDetector extends TFJSBaseDetector<HandScan> {
             keypoint2D?.name,
             name,
           );
-          if (name != null && z != null && score != null) {
+          if (name != null && z != null) {
             // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
             const handId = name as HandID;
             const {
@@ -70,7 +83,7 @@ class TFJSHandDetector extends TFJSBaseDetector<HandScan> {
                 y,
                 z,
               ],
-              score,
+              score: keypointScore ?? score,
               screenPosition: [
                 screenX,
                 screenY,

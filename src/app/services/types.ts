@@ -1,6 +1,7 @@
 import { type Route } from 'app/types';
 import {
   type BodyDetectorService,
+  type CorticalDetectorService,
   type HandDetectorService,
 } from './detector';
 import { type LoggingService } from './logging';
@@ -24,10 +25,12 @@ export type Services = {
   readonly loggingService: LoggingService,
   readonly bodyDetectorService: BodyDetectorService | undefined,
   readonly handDetectorService: HandDetectorService | undefined,
+  readonly corticalDetectorService: CorticalDetectorService | undefined,
 };
 
-export type ServiceDescriptor = {
+export type ServicesDescriptor = {
   readonly loggingService: 'local',
   readonly bodyDetectorService: 'local' | 'embedded' | undefined,
   readonly handDetectorService: 'local' | 'embedded' | undefined,
+  readonly corticalDetectorService: 'local' | undefined,
 };
