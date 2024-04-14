@@ -78,6 +78,7 @@ function getHands<
 export function install() {
   return function ({
     poseStream,
+    handStream,
   }: PlayProps) {
     const [
       detections,
@@ -98,6 +99,11 @@ export function install() {
     const keypointCanvas = useRef<HTMLCanvasElement>(null);
 
     useEffect(function () {
+      const s = handStream.subscribe({
+        next(hands) {
+          console.log(hands);
+        },
+      });
       const subscription = poseStream.subscribe({
         next(poses) {
           setDetections((detections) => {
@@ -219,6 +225,7 @@ export function install() {
       return subscription.unsubscribe.bind(subscription);
     }, [
       poseStream,
+      handStream,
       camera,
     ]);
     const detectionsPerSecond = detections.length > 10

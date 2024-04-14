@@ -3,6 +3,7 @@ import {
   type PlayProps,
 } from 'app/pages/main/play/types';
 import {
+  type HandDetectorService,
   type PoseDetectorService,
   PoseSourceType,
 } from 'app/services/detector';
@@ -19,9 +20,11 @@ import { PlayLoading } from './loading';
 
 export function install({
   poseDetectorService,
+  handDetectorService,
   Play,
 }: {
   poseDetectorService: PoseDetectorService,
+  handDetectorService: HandDetectorService,
   Play: Play,
 }) {
   const asyncPresenter = new AsyncPresenter<PlayProps>();
@@ -33,7 +36,8 @@ export function install({
 
   return function () {
     const asyncModel = useMemo(function () {
-      return new AsyncModel<PlayProps>();
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+      return new AsyncModel<PlayProps>({} as PlayProps);
     }, []);
 
     useAsyncEffect(async function () {
@@ -41,22 +45,37 @@ export function install({
         asyncModel,
         async function () {
           const detector = await poseDetectorService.loadDetector();
-          const poseStream = await detector.detect({
+          return detector.detect({
             type: PoseSourceType.Camera,
           });
-          return poseStream;
         },
-        function (_value, poseStream) {
-          return {
-            poseStream,
-          };
+        function (value, poseStream) {
+          value.poseStream = poseStream;
+          return value;
         },
       );
       return function () {
         poseStream.complete();
       };
     }, [asyncModel]);
-
+    useAsyncEffect(async function () {
+      const handStream = await asyncPresenter.append(
+        asyncModel,
+        async function () {
+          const detector = await handDetectorService.loadDetector();
+          return detector.detect({
+            type: PoseSourceType.Camera,
+          });
+        },
+        function (value, poseStream) {
+          value.handStream = poseStream;
+          return value;
+        },
+      );
+      return function () {
+        handStream.complete();
+      };
+    }, [asyncModel]);
     const ObservingAsync = usePartialObserverComponent(
       function () {
         return {

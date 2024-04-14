@@ -2,7 +2,10 @@ import {
   type Initializer,
   type Page,
 } from 'app/pages/types';
-import { type PoseDetectorService } from 'app/services/detector';
+import {
+  type HandDetectorService,
+  type PoseDetectorService,
+} from 'app/services/detector';
 import { type LoggingService } from 'app/services/logging';
 import {
   StackModel,
@@ -22,12 +25,15 @@ import { install as installPlay } from './play/install';
 export function install({
   loggingService,
   poseDetectorService,
+  handDetectorService,
 }: {
   loggingService: LoggingService,
   poseDetectorService: PoseDetectorService,
+  handDetectorService: HandDetectorService,
 }): Page {
   const Play = installPlay({
     poseDetectorService,
+    handDetectorService,
   });
   const Home = installHome({
     Play,

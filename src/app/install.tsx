@@ -36,7 +36,8 @@ function routeToServiceDescriptor(route: Route): ServiceDescriptor {
   switch (route.type) {
     case RouteType.Main:
       return {
-        handDetectorService: 'embedded',
+        handDetectorService: 'local',
+        // only need one pose detector to be embedded, can run other on main
         poseDetectorService: 'embedded',
         loggingService: 'local',
       };
@@ -54,6 +55,9 @@ function routeToServiceDescriptor(route: Route): ServiceDescriptor {
             poseDetectorService: undefined,
             loggingService: 'local',
           };
+        case DetectorType.Aggregate:
+          // TODO: it's probably pretty easy to do, although there's no reason to do it
+          throw new Error('Aggregate detector not supported as embedded detector');
         default:
           throw new UnreachableError(route.detectorType);
       }

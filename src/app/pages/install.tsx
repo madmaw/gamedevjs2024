@@ -31,6 +31,7 @@ export function install({
       return installMain({
         loggingService,
         poseDetectorService: checkExists(poseDetectorService, 'must have pose detector service'),
+        handDetectorService: checkExists(handDetectorService, 'must have hand detector service'),
       });
     case RouteType.EmbeddedDetector:
       switch (route.detectorType) {
@@ -44,6 +45,9 @@ export function install({
             detectorService: checkExists(handDetectorService, 'must have hand detector service'),
             context,
           });
+        case DetectorType.Aggregate:
+          // TODO probably easy to do
+          throw new Error('Aggregate detector not supported as embedded detector');
         default:
           throw new UnreachableError(route.detectorType);
       }
