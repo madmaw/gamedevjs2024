@@ -6,6 +6,10 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
   base: '',
+  assetsInclude: [
+    '**/*.fbx',
+    '**/*.obj',
+  ],
   plugins: [
     tsconfigPaths(),
     eslint({

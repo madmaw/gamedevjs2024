@@ -163,6 +163,8 @@ module.exports = {
       },
     ],
     '@eslint-community/eslint-comments/no-unused-disable': ['error'],
+    // incompatible with three/fiber
+    'react/no-unknown-property': ['off'],
     'react/display-name': ['off'],
     'react/react-in-jsx-scope': ['off'],
     'react/prop-types': ['off'],
@@ -188,10 +190,8 @@ module.exports = {
       'warn',
       'multiline-multiprop',
     ],
-    'react/jsx-closing-bracket-location': [
-      'warn',
-      'tag-aligned',
-    ],
+    // handled by dprint
+    'react/jsx-closing-bracket-location': ['off'],
     'react-hooks/exhaustive-deps': [
       'error',
       {

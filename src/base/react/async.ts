@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 export function useAsyncEffect(
-  effect: () => Promise<(() => void) | undefined>,
+  effect: () => Promise<(() => void) | void | undefined>,
   deps: ReadonlyArray<unknown>,
 ) {
   useEffect(

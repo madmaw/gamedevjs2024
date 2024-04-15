@@ -23,8 +23,8 @@ import {
 } from 'rxjs';
 
 function aggregate(bodyScan: BodyScan, handScan: HandScan): CorticalScan {
+  // assumes one body and two hands max
   const poses = bodyScan.poses.map<CorticalPose>(bodyPose => {
-    // TODO attempt to match the hands to the closest body
     const keypoints = handScan.poses.reduce<Partial<Record<CorticalID, Keypoint>>>(
       (
         keypoints,
@@ -45,6 +45,7 @@ function aggregate(bodyScan: BodyScan, handScan: HandScan): CorticalScan {
             // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
             const corticalID = `${kind}_${id}` as CorticalID;
             // match the wrists up with the 3D keypoints
+            // TODO line up 2D body and hand keypoints to verify that the wrist is the same
             // TODO scale 3D hand keypoints to match body (somehow - maybe use the length of the forearm and width of the hand or something)
             const scale = .3;
             const adjustedHandKeypoint: Keypoint = {

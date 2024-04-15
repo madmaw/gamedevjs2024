@@ -46,7 +46,7 @@ const POIs: Partial<Record<CorticalID, Color>> = {
   [CorticalID.RightWrist]: new Color('white'),
   // [CorticalID.RightElbow]: new Color('white'),
   [CorticalID.RightIndexFingerTip]: new Color('yellow'),
-  // [CorticalID.RightThumbTip]: new Color('orange'),
+  [CorticalID.RightThumbTip]: new Color('orange'),
   [CorticalID.LeftElbow]: new Color('white'),
   // [CorticalID.LeftWrist]: new Color('blue'),
   // [CorticalID.LeftIndexFingerTip]: new Color('magenta'),

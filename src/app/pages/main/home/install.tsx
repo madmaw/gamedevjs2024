@@ -16,15 +16,13 @@ import {
   HomeOptions,
 } from './menu';
 
-export function install({
-  Play,
-}: {
-  Play: ComponentType,
-}) {
+export function install() {
   return function ({
+    Play,
     stackController,
   }: {
     stackController: StackController,
+    Play: ComponentType,
   }) {
     const { _ } = useLingui();
 
@@ -45,7 +43,10 @@ export function install({
         default:
           throw new UnreachableError(option);
       }
-    }, [stackController]);
+    }, [
+      stackController,
+      Play,
+    ]);
     return (
       <SizeProvider size={Size.Large}>
         <Screen title={_(msg`Home`)}>
