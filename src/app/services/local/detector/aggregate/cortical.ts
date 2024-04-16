@@ -47,7 +47,7 @@ function aggregate(bodyScan: BodyScan, handScan: HandScan): CorticalScan {
             // match the wrists up with the 3D keypoints
             // TODO line up 2D body and hand keypoints to verify that the wrist is the same
             // TODO scale 3D hand keypoints to match body (somehow - maybe use the length of the forearm and width of the hand or something)
-            const scale = .3;
+            const scale = 1;
             const adjustedHandKeypoint: Keypoint = {
               ...handKeypoint,
               // eslint-disable-next-line @typescript-eslint/consistent-type-assertions

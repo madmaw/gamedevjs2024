@@ -9,7 +9,6 @@ import {
 } from 'app/domain/pose';
 import { type Detector } from 'app/services/detector';
 import { type LoggingService } from 'app/services/logging';
-import { delay } from 'base/delay';
 import { exists } from 'base/exists';
 import { checkState } from 'base/preconditions';
 import { UnreachableError } from 'base/unreachable_error';
@@ -118,7 +117,7 @@ export class TFJSHandDetectorService extends TFJSBaseDetectorService<HandScan> {
   protected override async _loadDetector(): Promise<Detector<HandScan>> {
     // TODO somehow split up so these aren't included in the main bundle
     // const mediaPipePromise = import('@mediapipe/pose');
-    const mediaPipePromise = delay(1000);
+    const mediaPipePromise = Promise.resolve();
     const handDetectorPromise = Promise.all([
       import('@tensorflow-models/hand-pose-detection'),
       mediaPipePromise,

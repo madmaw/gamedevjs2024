@@ -1,14 +1,13 @@
 import {
   EntityType,
   type Scene,
-  SimpleEntity,
 } from 'app/domain/scene';
 import {
   type Play,
   type PlayProps,
 } from 'app/pages/main/play/types';
 import { type EntityRendererRegistry } from 'app/pages/main/scene/renderer';
-import { PrimitiveEntityRenderer } from 'app/pages/main/scene/renderers/primitive';
+import { PlayerEntityRenderer } from 'app/pages/main/scene/renderers/player';
 import {
   type CorticalDetectorService,
   PoseSourceType,
@@ -22,14 +21,11 @@ import {
   createPartialComponent,
   usePartialObserverComponent,
 } from 'base/react/partial';
-import { runInAction } from 'mobx';
 import { useMemo } from 'react';
 import {
-  Euler,
   type Group,
   type Loader,
   Mesh,
-  Quaternion,
   SkeletonHelper,
   Vector3,
 } from 'three';
@@ -37,6 +33,7 @@ import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { CustomAsync } from 'ui/components/async/custom';
 import fpsHandsUrl from './assets/fps-hands.fbx';
+// import cartoonHandsUrl from './assets/cartoon-hands.fbx';
 import { PlayFailure } from './failure';
 import { PlayLoading } from './loading';
 
@@ -48,16 +45,18 @@ type Asset = [
   number,
 ];
 
+// TODO move loader creation into parent installer
 const fbxLoader = new FBXLoader();
 const objLoader = new OBJLoader();
 
+// TODO move asset creation into child installers
 const ASSETS: Asset[] = [
   [
     fbxLoader,
     fpsHandsUrl,
     EntityType.Player,
     new Vector3(0, -90, 0),
-    .02,
+    .05,
   ],
 ];
 
@@ -65,10 +64,12 @@ export function install({
   rendererRegistry,
   corticalDetectorService,
   Play,
+  debug,
 }: {
   rendererRegistry: EntityRendererRegistry,
   corticalDetectorService: CorticalDetectorService,
   Play: Play,
+  debug: boolean,
 }) {
   const asyncPresenter = new AsyncPresenter<PlayProps>();
   const Async = CustomAsync<PlayProps>;
@@ -84,8 +85,8 @@ export function install({
   }) {
     const asyncModel = useMemo(function () {
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-      return new AsyncModel<PlayProps>({} as PlayProps);
-    }, []);
+      return new AsyncModel<PlayProps>({ scene } as PlayProps);
+    }, [scene]);
 
     useAsyncEffect(async function () {
       const corticalStream = await asyncPresenter.append(
@@ -118,38 +119,25 @@ export function install({
         object.position.add(offset);
         offsetObject.add(object);
 
-        const EntityRenderer = createPartialComponent(PrimitiveEntityRenderer, {
+        const EntityRenderer = createPartialComponent(PlayerEntityRenderer, {
           object: offsetObject,
           baseScale: scale,
+          debug,
         });
         rendererRegistry.registerRendererForEntityType(entityType, EntityRenderer, 1);
         return offsetObject;
       }));
-      const player = new SimpleEntity(
-        scene.nextEntityId++,
-        EntityType.Player,
-        new Vector3(0, 0, 0),
-        new Quaternion().setFromEuler(new Euler(-Math.PI / 4, Math.PI, 0)),
-      );
-      runInAction(function () {
-        scene.entities.push(
-          player,
-        );
-      });
       const skeleton = new SkeletonHelper(object);
       // find a bone
       const hand = skeleton.bones.find(function (bone) {
-        return bone.name === 'handL';
+        return bone.name === 'thumb01R';
+      });
+      skeleton.bones.forEach(function (bone) {
+        // bone.quaternion.set(0, 0, 0, 1);
       });
       // hand?.position.set(1, 0, 0);
-
-      setInterval(function () {
-        runInAction(function () {
-          player.rotation = player.rotation.clone().multiply(
-            new Quaternion().setFromEuler(new Euler(Math.PI / 30, 0, 0)),
-          );
-        });
-      }, 100);
+      // hand?.quaternion.multiply(new Quaternion().setFromEuler(new Euler(0, 0, -Math.PI / 2)));
+      // hand?.quaternion.set(0, 0, 0, 1);
     }, [
       asyncModel,
       scene,

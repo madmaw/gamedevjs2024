@@ -99,6 +99,7 @@ export function install() {
               poses.forEach(function ({
                 keypoints,
               }) {
+                const nose = keypoints[BodyID.Nose];
                 const eyes = [
                   keypoints[BodyID.LeftEye],
                   keypoints[BodyID.RightEye],
@@ -110,27 +111,22 @@ export function install() {
                   )
                   : 0;
 
-                ctx.font = `${eyeDistance * 2}px serif`;
+                ctx.font = `${eyeDistance * 4}px serif`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
 
-                if (eyes.length > 1) {
+                if (eyes.length > 1 && nose) {
                   const angle = Math.atan2(
                     eyes[1].screenPosition[1] - eyes[0].screenPosition[1],
                     eyes[1].screenPosition[0] - eyes[0].screenPosition[0],
                   );
-                  const [
-                    eyeX,
-                    eyeY,
-                  ] = [
-                    (eyes[0].screenPosition[0] + eyes[1].screenPosition[0]) / 2,
-                    (eyes[0].screenPosition[1] + eyes[1].screenPosition[1]) / 2,
-                  ];
+
                   ctx.save();
                   ctx.globalAlpha = (eyes[0].score ?? 1) * (eyes[1].score ?? 1);
-                  ctx.translate(eyeX, eyeY);
+                  ctx.translate(...nose.screenPosition);
                   ctx.rotate(angle);
-                  ctx.fillText('👀', 0, 0);
+                  ctx.scale(1, -1);
+                  ctx.fillText('😄', 0, 0);
                   ctx.restore();
                 }
 

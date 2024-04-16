@@ -9,7 +9,6 @@ import {
   StackModel,
   StackPresenter,
 } from 'app/ui/stack/presenter';
-import { delay } from 'base/delay';
 import {
   createPartialObserverComponent,
   usePartialComponent,
@@ -32,9 +31,11 @@ import { install as installScene } from './scene/install';
 export function install({
   loggingService,
   corticalDetectorService,
+  debug,
 }: {
   loggingService: LoggingService,
   corticalDetectorService: CorticalDetectorService,
+  debug: boolean,
 }): Page {
   const {
     rendererRegistry,
@@ -43,13 +44,11 @@ export function install({
   const Play = installPlay({
     rendererRegistry,
     corticalDetectorService,
+    debug,
   });
   const Home = installHome();
   async function loadMessages(locale: string) {
-    const [messages] = await Promise.all([
-      import(`./locales/${locale}.po`),
-      delay(1000),
-    ]);
+    const [messages] = await Promise.all([import(`./locales/${locale}.po`)]);
     // throw new Error('shit');
     return messages;
   }

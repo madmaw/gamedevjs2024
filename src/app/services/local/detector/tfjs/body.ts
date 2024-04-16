@@ -11,7 +11,6 @@ import {
 } from 'app/domain/pose';
 import { type Detector } from 'app/services/detector';
 import { type LoggingService } from 'app/services/logging';
-import { delay } from 'base/delay';
 import { exists } from 'base/exists';
 import { checkState } from 'base/preconditions';
 import {
@@ -105,7 +104,7 @@ export class TFJSBodyDetectorService extends TFJSBaseDetectorService<BodyScan> {
   protected override async _loadDetector(): Promise<Detector<BodyScan>> {
     // TODO somehow split up so these aren't included in the main bundle
     // const mediaPipePromise = import('@mediapipe/pose');
-    const mediaPipePromise = delay(1000);
+    const mediaPipePromise = Promise.resolve();
     const poseDetectorPromise = Promise.all([
       import('@tensorflow-models/pose-detection'),
       mediaPipePromise,

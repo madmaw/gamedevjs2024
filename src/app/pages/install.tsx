@@ -32,6 +32,7 @@ export function install({
       return installMain({
         loggingService,
         corticalDetectorService: checkExists(corticalDetectorService, 'must have pose detector service'),
+        debug: context.debug,
       });
     case RouteType.EmbeddedDetector:
       switch (route.detectorType) {
