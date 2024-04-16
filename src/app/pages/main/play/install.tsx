@@ -17,6 +17,8 @@ import {
   Quaternion,
   Vector3,
 } from 'three';
+import { Alignment } from 'ui/alignment';
+import { Aligner } from 'ui/components/aligner';
 import { install as installDebug } from './debug/install';
 import { install as installInit } from './init/install';
 import {
@@ -80,8 +82,15 @@ function installPlay({ Debug }: { Debug: Play | undefined }) {
             // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
             const corticalId = id as CorticalID;
             const keypoint = keypoints[corticalId];
-            if (keypoint != null && keypoint.score > .5) {
-              keyPositions[corticalId] = new Vector3(...keypoint.relativePosition).multiplyScalar(-1);
+            if (keypoint != null && keypoint.score > .6) {
+              // x is flipped due to mirroring, y is flipped due to using pixel coordinates, and z
+              // is flipped it is measuring depth, we keep z as is because the model is detecting us facing
+              // outward and we want to detect facing inward
+              keyPositions[corticalId] = new Vector3(
+                -keypoint.relativePosition[0],
+                -keypoint.relativePosition[1],
+                keypoint.relativePosition[2],
+              );
             }
           }
           runInAction(function () {
@@ -118,10 +127,15 @@ function installPlay({ Debug }: { Debug: Play | undefined }) {
     }, [update]);
 
     return Debug && (
-      <Debug
-        corticalStream={corticalStream}
-        scene={scene}
-      />
+      <Aligner
+        xAlignment={Alignment.End}
+        yAlignment={Alignment.End}
+      >
+        <Debug
+          corticalStream={corticalStream}
+          scene={scene}
+        />
+      </Aligner>
     );
   };
 }

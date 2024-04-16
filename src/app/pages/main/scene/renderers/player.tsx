@@ -1,6 +1,7 @@
 import { CorticalID } from 'app/domain/pose';
 import { type PlayerEntity } from 'app/domain/scene';
 import { type EntityRendererProps } from 'app/pages/main/scene/renderer';
+import { exists } from 'base/exists';
 import Color from 'colorjs.io';
 import { autorun } from 'mobx';
 import { observer } from 'mobx-react';
@@ -18,8 +19,9 @@ import {
 
 type BoneData = {
   jointId: CorticalID,
-  outgoingJointId: CorticalID,
+  planeIds: [CorticalID, CorticalID, CorticalID],
   incomingJointId: CorticalID,
+  outgoingJointId: CorticalID,
   naturalRotation: Quaternion,
 };
 
@@ -89,15 +91,27 @@ const BONE_DATA: Record<string, BoneData> = {
   // ['upper_armR']: CorticalID.RightShoulder,
   // ['forearmR']: CorticalID.RightElbow,
   // ['forearmR_end']: CorticalID.RightWrist,
-  ['handR']: {
+  ['forearmR001']: {
     jointId: CorticalID.RightWrist,
-    // outgoingAxisId: CorticalID.RightMiddleFingerMCP,
-    outgoingJointId: CorticalID.RightMiddleFingerTip,
+    planeIds: [
+      CorticalID.RightIndexFingerMCP,
+      CorticalID.RightWrist,
+      CorticalID.RightPinkyFingerMCP,
+    ],
     incomingJointId: CorticalID.RightElbow,
-    naturalRotation: new Quaternion().setFromEuler(new Euler(0, 0, Math.PI / 3, 'ZYX')),
-    // naturalRotation: new Quaternion().setFromEuler(
-    //   new Euler(1.6449593706654793, 1.1126009729576014, 0.6316635407325109, 'XYZ'),
-    // ),
+    outgoingJointId: CorticalID.RightMiddleFingerMCP,
+    naturalRotation: new Quaternion().setFromEuler(new Euler(Math.PI / 2, 0, -Math.PI / 3, 'XYZ')),
+  },
+  ['forearmL001']: {
+    jointId: CorticalID.LeftWrist,
+    planeIds: [
+      CorticalID.LeftPinkyFingerMCP,
+      CorticalID.LeftWrist,
+      CorticalID.LeftIndexFingerMCP,
+    ],
+    incomingJointId: CorticalID.LeftElbow,
+    outgoingJointId: CorticalID.LeftMiddleFingerMCP,
+    naturalRotation: new Quaternion().setFromEuler(new Euler(Math.PI / 2, 0, Math.PI / 3, 'XYZ')),
   },
   // ['handL']: CorticalID.LeftWrist,
   // ['thumb01R']: CorticalID.RightThumbCMC,
@@ -129,35 +143,70 @@ export const PlayerEntityRenderer = observer(function ({
   useEffect(function () {
     // TODO may not cause a rerender
     const disposer = autorun(function () {
+      const nose = entity.keypoints.nose;
+      if (!nose) {
+        return;
+      }
       skeleton.bones.forEach(function (bone) {
         const boneData = BONE_DATA[bone.name];
         if (boneData != null) {
           const {
             jointId,
+            planeIds,
+            naturalRotation,
             incomingJointId,
             outgoingJointId,
-            naturalRotation,
           } = boneData;
           const joint = entity.keypoints[jointId];
           const incomingJoint = entity.keypoints[incomingJointId];
           const outgoingJoint = entity.keypoints[outgoingJointId];
-          if (joint != null && incomingJoint != null && outgoingJoint != null) {
-            const incomingNormal = incomingJoint.clone().sub(joint).normalize();
-            const baseNormal = new Vector3(1, 0, 0);
-            const rotation = new Quaternion().setFromUnitVectors(
-              incomingNormal,
-              baseNormal,
+          const planesPoints = planeIds.map((planeId) => entity.keypoints[planeId]);
+          if (joint != null && incomingJoint != null && outgoingJoint != null && planesPoints.every(exists)) {
+            const alignNormal = planesPoints[0].clone().sub(planesPoints[1]).normalize();
+            const planeNormal = alignNormal.cross(
+              planesPoints[2].clone().sub(planesPoints[1]).normalize(),
+            ).normalize();
+
+            const screenNormal = new Vector3(0, 0, -1);
+            const q = new Quaternion().setFromUnitVectors(
+              planeNormal,
+              screenNormal,
             );
-            const outgoingNormal = outgoingJoint.clone().sub(joint).applyQuaternion(rotation).normalize();
-            const angle = baseNormal.angleTo(outgoingNormal);
-            const axis = baseNormal.cross(outgoingNormal).normalize();
-            console.log(angle, axis);
-            // bone.position.copy(position);
-            const q = new Quaternion().setFromAxisAngle(
-              axis,
-              angle,
-            ).multiply(naturalRotation);
-            bone.quaternion.copy(q);
+            // get around plane normal
+            const q2 = new Quaternion().setFromUnitVectors(
+              planeNormal,
+              new Vector3(0, 1, 0),
+            );
+            const planeJoint = joint.clone().applyQuaternion(q2);
+            const planeIncomingJoint = incomingJoint.clone().applyQuaternion(q2);
+            const planeOutgoingJoint = outgoingJoint.clone().applyQuaternion(q2);
+            const v1 = planeOutgoingJoint.sub(planeJoint);
+            const v2 = planeJoint.sub(planeIncomingJoint);
+
+            const a = 0; // normalizeAngle(new Vector2(v1.x, v1.z).angle() - new Vector2(v2.x, v2.z).angle());
+
+            console.log(
+              'plane',
+              planeNormal,
+              'incoming normal',
+              joint.clone().sub(incomingJoint).normalize(),
+              'outgoing normal',
+              outgoingJoint.clone().sub(joint).normalize(),
+              // 'joint',
+              // joint,
+              'angle',
+              a,
+            );
+            bone.quaternion.copy(new Quaternion().setFromAxisAngle(planeNormal, a))
+              .multiply(q)
+              .multiply(naturalRotation);
+            // adjust the position to account for rotation
+            const adjustedPosition = joint.clone().sub(nose).applyQuaternion(
+              entity.rotation.invert(),
+            ).sub(
+              entity.position,
+            );
+            // bone.position.copy(adjustedPosition);
           }
         }
       });
@@ -188,7 +237,7 @@ export const PlayerEntityRenderer = observer(function ({
             >
               <sphereGeometry
                 args={[
-                  .03,
+                  .03 * Math.pow((1 - point.z) / 2, 2),
                   8,
                   8,
                 ]}

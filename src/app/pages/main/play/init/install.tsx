@@ -56,7 +56,7 @@ const ASSETS: Asset[] = [
     fpsHandsUrl,
     EntityType.Player,
     new Vector3(0, -90, 0),
-    .05,
+    .1,
   ],
 ];
 
