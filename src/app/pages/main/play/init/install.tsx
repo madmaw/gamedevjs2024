@@ -26,7 +26,6 @@ import {
   type Group,
   type Loader,
   Mesh,
-  SkeletonHelper,
   Vector3,
 } from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
@@ -34,6 +33,7 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { CustomAsync } from 'ui/components/async/custom';
 import fpsHandsUrl from './assets/fps-hands.fbx';
 // import cartoonHandsUrl from './assets/cartoon-hands.fbx';
+import { PlayerEntityRenderer2 } from 'app/pages/main/scene/renderers/player2';
 import { PlayFailure } from './failure';
 import { PlayLoading } from './loading';
 
@@ -107,7 +107,7 @@ export function install({
       };
     }, [asyncModel]);
     useAsyncEffect(async function () {
-      const [object] = await Promise.all(ASSETS.map(async function ([
+      await Promise.all(ASSETS.map(async function ([
         loader,
         url,
         entityType,
@@ -124,20 +124,12 @@ export function install({
           baseScale: scale,
           debug,
         });
-        rendererRegistry.registerRendererForEntityType(entityType, EntityRenderer, 1);
+        const EntityRenderer2 = createPartialComponent(PlayerEntityRenderer2, {
+          debug,
+        });
+        rendererRegistry.registerRendererForEntityType(entityType, EntityRenderer2, 1);
         return offsetObject;
       }));
-      const skeleton = new SkeletonHelper(object);
-      // find a bone
-      const hand = skeleton.bones.find(function (bone) {
-        return bone.name === 'thumb01R';
-      });
-      skeleton.bones.forEach(function (bone) {
-        // bone.quaternion.set(0, 0, 0, 1);
-      });
-      // hand?.position.set(1, 0, 0);
-      // hand?.quaternion.multiply(new Quaternion().setFromEuler(new Euler(0, 0, -Math.PI / 2)));
-      // hand?.quaternion.set(0, 0, 0, 1);
     }, [
       asyncModel,
       scene,
