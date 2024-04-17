@@ -1,5 +1,8 @@
 import { type Node } from 'base/graph/types';
-import { observable } from 'mobx';
+import {
+  computed,
+  observable,
+} from 'mobx';
 import {
   Quaternion,
   Vector3,
@@ -13,7 +16,15 @@ export class Scene {
   nextEntityId: number = 1;
 
   @observable.shallow
+  accessor scanSize: readonly [number, number] | undefined;
+
+  @observable.shallow
   accessor entities: Entity[] = [];
+
+  @computed
+  get player(): PlayerEntity | undefined {
+    return this.entities.find(isPlayer);
+  }
 
   constructor() {
   }
@@ -34,7 +45,9 @@ type BaseEntity<T extends EntityType> = {
 export type PlayerEntity = BaseEntity<EntityType.Player> & {
   keypoints: Partial<Readonly<Record<CorticalID, Vector3>>>,
 
-  hands: Record<HandKind, Hand>,
+  eyePosition: Vector3 | undefined,
+
+  readonly hands: Record<HandKind, Hand>,
 };
 
 export type Entity = PlayerEntity;
@@ -57,7 +70,10 @@ export class PlayerEntityImpl extends SimpleEntity<EntityType.Player> implements
   @observable.ref
   accessor keypoints: Partial<Record<CorticalID, Vector3>> = {};
 
-  hands: Record<HandKind, Hand> = {
+  @observable.ref
+  accessor eyePosition: Vector3 | undefined;
+
+  readonly hands: Record<HandKind, Hand> = {
     [HandKind.Left]: new Hand(),
     [HandKind.Right]: new Hand(),
   };
@@ -65,6 +81,10 @@ export class PlayerEntityImpl extends SimpleEntity<EntityType.Player> implements
   constructor(id: number) {
     super(id, EntityType.Player);
   }
+}
+
+function isPlayer(entity: Entity): entity is PlayerEntity {
+  return entity.type === EntityType.Player;
 }
 
 export class Hand {

@@ -6,7 +6,15 @@ import {
 import { Canvas } from '@react-three/fiber';
 import { type Scene } from 'app/domain/scene';
 import { observer } from 'mobx-react';
-import { type Mesh } from 'three';
+import {
+  useEffect,
+  useRef,
+} from 'react';
+import {
+  type Mesh,
+  PerspectiveCamera,
+  Vector3,
+} from 'three';
 import { EntityRendererRegistry } from './renderer';
 
 function SuperBall({ radius }: { radius: number }) {
@@ -71,17 +79,33 @@ function Ground() {
 
 export function install() {
   const rendererRegistry = new EntityRendererRegistry();
-  const Component = function ({
+  const Component = observer(function ({
     scene,
   }: {
     scene: Scene,
   }) {
+    const camera = useRef(new PerspectiveCamera());
+    useEffect(function () {
+      // adjust the camera to follow the users head
+      const cameraPosition = camera.current.position;
+      const eyePosition = scene.player?.eyePosition;
+      cameraPosition.copy(eyePosition ?? new Vector3(0, 0, 10));
+      camera.current.lookAt(eyePosition?.clone().sub(new Vector3(0, 0, 10)) ?? new Vector3());
+    }, [
+      scene.scanSize,
+      scene.player,
+      scene.player?.eyePosition,
+    ]);
+
     return (
-      <Canvas shadows={true}>
+      <Canvas
+        shadows={true}
+        camera={camera.current}
+      >
         <ambientLight intensity={.5} />
         <directionalLight
           position={[
-            0,
+            -1,
             1,
             0,
           ]}
@@ -101,9 +125,9 @@ export function install() {
         </Physics>
       </Canvas>
     );
-  };
+  });
   return {
     rendererRegistry,
-    Component: observer(Component),
+    Component,
   };
 }

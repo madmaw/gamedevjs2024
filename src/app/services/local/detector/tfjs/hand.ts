@@ -13,6 +13,7 @@ import { exists } from 'base/exists';
 import { checkState } from 'base/preconditions';
 import { UnreachableError } from 'base/unreachable_error';
 import {
+  getSize,
   TFJSBaseDetector,
   TFJSBaseDetectorService,
 } from './base';
@@ -102,6 +103,7 @@ class TFJSHandDetector extends TFJSBaseDetector<HandScan> {
     return {
       epoch,
       poses,
+      size: getSize(image),
     };
   }
 }

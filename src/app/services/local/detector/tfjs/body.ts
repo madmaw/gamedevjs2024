@@ -14,6 +14,7 @@ import { type LoggingService } from 'app/services/logging';
 import { exists } from 'base/exists';
 import { checkState } from 'base/preconditions';
 import {
+  getSize,
   TFJSBaseDetector,
   TFJSBaseDetectorService,
 } from './base';
@@ -50,6 +51,7 @@ class TFJSBodyDetector extends TFJSBaseDetector<BodyScan> {
           score,
         }, i) => {
           const keypoint2D = body.keypoints[i];
+          // TODO this precondition is not always true!
           checkState(
             keypoint2D?.name === name,
             '2D and 3D body parts do not match: {0} != {1}',
@@ -89,6 +91,7 @@ class TFJSBodyDetector extends TFJSBaseDetector<BodyScan> {
     return {
       epoch,
       poses,
+      size: getSize(image),
     };
   }
 }
@@ -96,7 +99,7 @@ class TFJSBodyDetector extends TFJSBaseDetector<BodyScan> {
 export class TFJSBodyDetectorService extends TFJSBaseDetectorService<BodyScan> {
   constructor(
     private readonly loggingService: LoggingService,
-    private readonly modelType: 'lite' | 'full' | 'heavy' = 'full',
+    private readonly modelType: 'lite' | 'full' | 'heavy' = 'lite',
   ) {
     super();
   }

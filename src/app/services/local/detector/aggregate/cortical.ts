@@ -75,6 +75,8 @@ function aggregate(bodyScan: BodyScan, handScan: HandScan): CorticalScan {
   return {
     epoch: Math.max(handScan.epoch, bodyScan.epoch),
     poses,
+    // assume they are the same size
+    size: bodyScan.size,
   };
 }
 

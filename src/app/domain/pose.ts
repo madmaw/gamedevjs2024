@@ -13,6 +13,7 @@ export type Pose<Kind, ID extends string | number | symbol> = {
 export type Scan<Kind, ID extends string | number | symbol> = {
   readonly epoch: number,
   readonly poses: readonly Pose<Kind, ID>[],
+  readonly size: readonly [number, number],
 };
 
 export const enum HandID {

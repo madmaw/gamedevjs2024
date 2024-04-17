@@ -1,4 +1,5 @@
 import { type PoseDetectorInput } from '@tensorflow-models/pose-detection';
+import { Tensor } from '@tensorflow/tfjs-core';
 import {
   type Detector,
   type DetectorService,
@@ -95,4 +96,20 @@ export abstract class TFJSBaseDetectorService<T> implements DetectorService<T> {
   }
 
   protected abstract _loadDetector(): Promise<Detector<T>>;
+}
+
+export function getSize(image: PoseDetectorInput): [number, number] {
+  if (image instanceof Tensor) {
+    // TODO what is the shape?
+    // Also we will never actually use this
+    return [
+      image.shape[0],
+      image.shape[1],
+    ];
+  } else {
+    return [
+      image.width,
+      image.height,
+    ];
+  }
 }

@@ -8,15 +8,9 @@ import {
   type PlayerEntity,
 } from 'app/domain/scene';
 import { type EntityRendererProps } from 'app/pages/main/scene/renderer';
-import { exists } from 'base/exists';
 import { type Node } from 'base/graph/types';
 import Color from 'colorjs.io';
-import {
-  autorun,
-  runInAction,
-} from 'mobx';
 import { observer } from 'mobx-react';
-import { useEffect } from 'react';
 import {
   Matrix4,
   Quaternion,
@@ -52,6 +46,7 @@ export const FingerRenderer = observer(function ({
             0,
             0,
           ]}
+          castShadow={true}
         >
           <capsuleGeometry
             args={[
@@ -120,6 +115,7 @@ export const HandRenderer = observer(function ({
           0,
           0,
         ]}
+        castShadow={true}
       >
         <boxGeometry
           args={[
@@ -157,14 +153,6 @@ export const PlayerEntityRenderer2 = observer(function ({
 }: EntityRendererProps<PlayerEntity> & {
   debug?: boolean,
 }) {
-  useEffect(function () {
-    return autorun(function () {
-      // TODO move this into the game creation code, but we do it here for now to prevent constant
-      // reloading
-      convertHandRotations(entity);
-    });
-  }, [entity]);
-
   const rightHand = entity.hands[HandKind.Right];
   const leftHand = entity.hands[HandKind.Left];
   return (
@@ -203,145 +191,3 @@ export const PlayerEntityRenderer2 = observer(function ({
     </>
   );
 });
-
-type HandData = {
-  kind: HandKind,
-  jointId: CorticalID,
-  crossAxisJointIds: [CorticalID, CorticalID],
-  incomingJointId: CorticalID,
-  outgoingJointId: CorticalID,
-};
-
-const RIGHT_HAND_DATA: HandData = {
-  kind: HandKind.Right,
-  jointId: CorticalID.RightWrist,
-  crossAxisJointIds: [
-    CorticalID.RightPinkyFingerMCP,
-    CorticalID.RightIndexFingerMCP,
-  ],
-  incomingJointId: CorticalID.RightElbow,
-  outgoingJointId: CorticalID.RightMiddleFingerMCP,
-};
-const LEFT_HAND_DATA: HandData = {
-  kind: HandKind.Left,
-  jointId: CorticalID.LeftWrist,
-  crossAxisJointIds: [
-    CorticalID.LeftIndexFingerMCP,
-    CorticalID.LeftPinkyFingerMCP,
-  ],
-  incomingJointId: CorticalID.LeftElbow,
-  outgoingJointId: CorticalID.LeftMiddleFingerMCP,
-};
-const HANDS = [
-  RIGHT_HAND_DATA,
-  LEFT_HAND_DATA,
-];
-
-function convertHandRotations({
-  keypoints,
-  hands,
-}: PlayerEntity) {
-  for (const handData of HANDS) {
-    const {
-      kind,
-      jointId,
-      crossAxisJointIds,
-      incomingJointId,
-      outgoingJointId,
-    } = handData;
-    const hand = hands[kind];
-    const joint = keypoints[jointId];
-    const incomingJoint = keypoints[incomingJointId];
-    const outgoingJoint = keypoints[outgoingJointId];
-    const crossAxisJoints = crossAxisJointIds.map((jointId) => keypoints[jointId]);
-    if (
-      joint != null
-      && incomingJoint != null
-      && outgoingJoint != null
-      && crossAxisJoints.every(exists)
-    ) {
-      const q = new Quaternion();
-      // account for forearm rotation
-      const forearmDirection = joint.clone().sub(incomingJoint).normalize();
-      // tends to hallucinate elbow position, which is convenient, but the z is never right
-      forearmDirection.z = 0;
-      const forearmAngle = Math.atan2(forearmDirection.y, forearmDirection.x);
-
-      const screenNormal = new Vector3(0, 0, 1);
-      const handDirection = (outgoingJoint.clone().sub(joint)).normalize();
-      q.setFromUnitVectors(
-        forearmDirection,
-        handDirection,
-      ).multiply(new Quaternion().setFromAxisAngle(screenNormal, forearmAngle));
-
-      const inverseQNoSpin = q.clone().invert();
-      const unrotatedCrossAxis = crossAxisJoints.map((joint) => joint.clone().applyQuaternion(inverseQNoSpin));
-      const crossAxis1 = unrotatedCrossAxis[0];
-      const crossAxis2 = unrotatedCrossAxis[1];
-      const crossAxis = crossAxis2.sub(crossAxis1);
-      const crossAxisAngle = Math.PI / 2 - Math.atan2(crossAxis.y, crossAxis.z);
-      q.premultiply(new Quaternion().setFromAxisAngle(handDirection, crossAxisAngle));
-
-      const inverseQ = q.clone().invert();
-
-      hand.wrist.connections.forEach(function (connection) {
-        convertFingerRotations(
-          keypoints,
-          kind,
-          connection,
-          handDirection,
-          inverseQ,
-        );
-      });
-      // ;
-      // adjust the position to account for rotation
-      runInAction(function () {
-        hand.wrist.value.rotation = q;
-        hand.position = joint.clone().multiplyScalar(2);
-      });
-      // bone.position.copy(adjustedPosition);
-    }
-  }
-}
-
-function convertFingerRotations(
-  keypoints: Partial<Record<CorticalID, Vector3>>,
-  kind: HandKind,
-  // TODO: do we need both segment and joint?
-  currentJoint: Node<Joint>,
-  previousDirection: Vector3,
-  unrotate: Quaternion,
-) {
-  const jointCorticalId = `${kind}_${currentJoint.value.id}` as CorticalID;
-  const nextJoint = currentJoint.connections.length === 1 ? currentJoint.connections[0] : null;
-  if (nextJoint == null) {
-    return;
-  }
-  const nextJointCorticalId = `${kind}_${nextJoint.value.id}` as CorticalID;
-
-  const jointPoint = keypoints[jointCorticalId];
-
-  const nextJointPoint = keypoints[nextJointCorticalId];
-  if (jointPoint != null && nextJointPoint != null) {
-    const segmentDirection = nextJointPoint.clone().sub(jointPoint).normalize();
-    const rotationAxis = previousDirection.clone().cross(segmentDirection).normalize().applyQuaternion(unrotate);
-    const rotationAngle = previousDirection.angleTo(segmentDirection);
-
-    // console.log('normal', previousDirection, 'dir', segmentDirection, 'axis', rotationAxis, rotationAngle);
-
-    const q = new Quaternion().setFromAxisAngle(rotationAxis, rotationAngle);
-    runInAction(function () {
-      currentJoint.value.rotation = q;
-    });
-
-    if (nextJoint != null) {
-      convertFingerRotations(
-        keypoints,
-        kind,
-        nextJoint,
-        segmentDirection,
-        unrotate.clone().premultiply(q.clone().invert()),
-      );
-    }
-  }
-}
