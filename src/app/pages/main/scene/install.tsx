@@ -1,38 +1,70 @@
 import {
-  Canvas,
-  useFrame,
-} from '@react-three/fiber';
+  Physics,
+  usePlane,
+  useSphere,
+} from '@react-three/cannon';
+import { Canvas } from '@react-three/fiber';
 import { type Scene } from 'app/domain/scene';
 import { observer } from 'mobx-react';
-import { useState } from 'react';
-import { Euler } from 'three';
+import { type Mesh } from 'three';
 import { EntityRendererRegistry } from './renderer';
 
-function MyMesh() {
-  const [
-    rotation,
-    setRotation,
-  ] = useState<Euler>(new Euler(0, 0, 0));
-  useFrame(function (_, delta) {
-    setRotation((rotation) => rotation.set(0, rotation.y + delta * Math.PI / 2, 0).clone());
-  });
+function SuperBall({ radius }: { radius: number }) {
+  const [ref] = useSphere<Mesh>(() => ({
+    mass: 1,
+    position: [
+      0,
+      1,
+      0,
+    ],
+    args: [radius],
+    material: {
+      restitution: 1,
+    },
+  }));
   return (
     <mesh
-      position={[
-        0,
-        0,
-        0,
-      ]}
-      rotation={rotation}
+      ref={ref}
+      castShadow={true}
     >
-      <boxGeometry
+      <sphereGeometry args={[
+        radius,
+        12,
+        8,
+      ]} />
+      <meshStandardMaterial color='red' />
+    </mesh>
+  );
+}
+
+function Ground() {
+  const [ref] = usePlane<Mesh>(() => ({
+    rotation: [
+      -Math.PI / 2,
+      0,
+      0,
+    ],
+    position: [
+      0,
+      -2,
+      0,
+    ],
+    material: {
+      restitution: .5,
+    },
+  }));
+  return (
+    <mesh
+      ref={ref}
+      receiveShadow={true}
+    >
+      <planeGeometry
         args={[
-          .1,
-          .1,
-          .1,
+          1000,
+          1000,
         ]}
       />
-      <meshStandardMaterial color='red' />
+      <meshStandardMaterial color='pink' />
     </mesh>
   );
 }
@@ -45,26 +77,28 @@ export function install() {
     scene: Scene,
   }) {
     return (
-      <Canvas>
-        <ambientLight intensity={1} />
-        <pointLight
+      <Canvas shadows={true}>
+        <ambientLight intensity={.5} />
+        <directionalLight
           position={[
-            -10,
-            10,
-            10,
+            0,
+            1,
+            0,
           ]}
-          decay={0}
-          intensity={Math.PI}
+          castShadow={true}
         />
-        <MyMesh />
-        {scene.entities.map(function (entity) {
-          const Renderer = rendererRegistry.getRenderer(entity);
-          return Renderer && (
-            <Renderer
-              key={entity.id}
-            />
-          );
-        })}
+        <Physics>
+          <SuperBall radius={.3} />
+          <Ground />
+          {scene.entities.map(function (entity) {
+            const Renderer = rendererRegistry.getRenderer(entity);
+            return Renderer && (
+              <Renderer
+                key={entity.id}
+              />
+            );
+          })}
+        </Physics>
       </Canvas>
     );
   };
