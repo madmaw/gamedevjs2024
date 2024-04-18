@@ -1,7 +1,7 @@
 import {
-  type Triplet,
-  useCompoundBody,
-} from '@react-three/cannon';
+  type RapierRigidBody,
+  RigidBody,
+} from '@react-three/rapier';
 import {
   CorticalID,
   HandKind,
@@ -15,8 +15,8 @@ import { type EntityRendererProps } from 'app/pages/main/scene/renderer';
 import { type Node } from 'base/graph/types';
 import Color from 'colorjs.io';
 import { observer } from 'mobx-react';
+import { useRef } from 'react';
 import {
-  type Group,
   Matrix4,
   Quaternion,
   Vector3,
@@ -34,14 +34,14 @@ const HAND_WIDTH = .8;
 const HAND_LENGTH = .8;
 const HAND_DEPTH = .2;
 const FINGER_RADIUS = HAND_DEPTH * .5;
-const BASE_FINGER_LENGTH = .2;
+const BASE_FINGER_LENGTH = .15;
 
-const HAND_SIZE: Triplet = [
+const HAND_SIZE: [number, number, number] = [
   HAND_WIDTH,
   HAND_LENGTH,
   HAND_DEPTH,
 ];
-const HAND_OFFSET: Triplet = [
+const HAND_OFFSET: [number, number, number] = [
   HAND_WIDTH / 2,
   0,
   0,
@@ -50,24 +50,30 @@ const HAND_OFFSET: Triplet = [
 export const FingerRenderer = observer(function ({
   segment,
   position,
+  parentRotation,
   length,
 }: {
   segment: Node<Joint>,
   position: Vector3,
+  parentRotation: Quaternion,
   length: number,
 }) {
+  const rotation = segment.value.rotation.clone().premultiply(parentRotation);
+  const fullRotation = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI / 2).premultiply(rotation);
+  const bodyPosition = new Vector3(
+    length / 2,
+    0,
+    0,
+  ).applyQuaternion(rotation).add(position);
   return (
-    <group
-      position={position}
-    >
-      <group quaternion={segment.value.rotation}>
+    <>
+      <RigidBody
+        quaternion={fullRotation}
+        position={bodyPosition}
+        lockRotations={true}
+        lockTranslations={true}
+      >
         <mesh
-          quaternion={new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI / 2)}
-          position={[
-            length / 2,
-            0,
-            0,
-          ]}
           castShadow={true}
         >
           <capsuleGeometry
@@ -80,22 +86,24 @@ export const FingerRenderer = observer(function ({
           />
           <meshStandardMaterial color='orange' />
         </mesh>
-        {segment.connections.map(function (connection) {
-          return (
-            <FingerRenderer
-              key={connection.value.id}
-              segment={connection}
-              position={new Vector3(length, 0, 0)}
-              length={length * .8}
-            />
-          );
-        })}
-      </group>
-    </group>
+      </RigidBody>
+      {segment.connections.map(function (connection) {
+        const childPosition = new Vector3(length, 0, 0).applyQuaternion(rotation).add(position);
+        return (
+          <FingerRenderer
+            key={connection.value.id}
+            segment={connection}
+            position={childPosition}
+            parentRotation={rotation}
+            length={length * .8}
+          />
+        );
+      })}
+    </>
   );
 });
 
-const HAND_FINGER_POSITIONS: [Vector3, number][] = [
+const HAND_FINGER_OFFSETS: [Vector3, number][] = [
   [
     new Vector3(HAND_LENGTH * .4, HAND_WIDTH / 2 + FINGER_RADIUS, 0),
     BASE_FINGER_LENGTH,
@@ -125,54 +133,52 @@ export const HandRenderer = observer(function ({
   hand: Hand,
   transform: Matrix4,
 }) {
-  const [
-    box,
-    api,
-  ] = useCompoundBody<Group>(() => ({
-    position: hand.position.toArray(),
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    quaternion: hand.wrist.value.rotation.toArray() as [number, number, number, number],
-    mass: 1,
-    shapes: [
-      {
-        type: 'Box',
-        args: HAND_SIZE,
-        position: HAND_OFFSET,
-      },
-    ],
-  }));
-
+  const ref = useRef<RapierRigidBody | null>(null);
+  const rotation = hand.wrist.value.rotation;
   return (
-    <group
-      // ref={box}
-      quaternion={hand.wrist.value.rotation}
-      position={hand.position}
-    >
-      {/* palm */}
-      <mesh
-        position={HAND_OFFSET}
-        castShadow={true}
+    <>
+      <RigidBody
+        ref={ref}
+        quaternion={rotation}
+        position={hand.position}
+        lockRotations={true}
+        lockTranslations={true}
+        mass={0}
       >
-        <boxGeometry
-          args={HAND_SIZE}
-        />
-        <meshStandardMaterial color='orange' />
-      </mesh>
+        {/* palm */}
+        <mesh
+          position={HAND_OFFSET}
+          castShadow={true}
+          // because the hand is symmetrical, this isn't really necessary
+          matrix={transform}
+        >
+          <boxGeometry
+            args={HAND_SIZE}
+          />
+          <meshStandardMaterial color='orange' />
+        </mesh>
+      </RigidBody>
       {hand.wrist.connections.map(function (connection, i) {
         const [
-          position,
+          offset,
           length,
-        ] = HAND_FINGER_POSITIONS[i];
+        ] = HAND_FINGER_OFFSETS[i];
+        const position = offset
+          .clone()
+          .applyMatrix4(transform)
+          .applyQuaternion(rotation)
+          .add(hand.position);
         return (
           <FingerRenderer
             key={connection.value.id}
             segment={connection}
-            position={position.clone().applyMatrix4(transform)}
+            position={position}
+            parentRotation={rotation}
             length={length}
           />
         );
       })}
-    </group>
+    </>
   );
 });
 

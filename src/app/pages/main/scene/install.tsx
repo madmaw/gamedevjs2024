@@ -1,9 +1,8 @@
+import { Canvas } from '@react-three/fiber';
 import {
   Physics,
-  usePlane,
-  useSphere,
-} from '@react-three/cannon';
-import { Canvas } from '@react-three/fiber';
+  RigidBody,
+} from '@react-three/rapier';
 import {
   computeCameraDistance,
   PLAYER_HEIGHT,
@@ -11,71 +10,93 @@ import {
 } from 'app/domain/scene';
 import { useReaction } from 'base/react/mobx';
 import { observer } from 'mobx-react';
-import { useRef } from 'react';
 import {
-  type Mesh,
+  Suspense,
+  useCallback,
+  useRef,
+} from 'react';
+import {
+  type DirectionalLight,
   PerspectiveCamera,
   Vector3,
 } from 'three';
 import { EntityRendererRegistry } from './renderer';
 
 function SuperBall({ radius }: { radius: number }) {
-  const [ref] = useSphere<Mesh>(() => ({
-    mass: 1,
-    position: [
-      0,
-      3,
-      0,
-    ],
-    args: [radius],
-    material: {
-      restitution: 1,
-    },
-  }));
   return (
-    <mesh
-      ref={ref}
-      castShadow={true}
+    <RigidBody
+      position={[
+        0,
+        3,
+        0,
+      ]}
+      restitution={1}
+      colliders={'ball'}
+      mass={1}
     >
-      <sphereGeometry args={[
-        radius,
-        12,
-        8,
-      ]} />
-      <meshStandardMaterial color='red' />
-    </mesh>
+      <mesh
+        castShadow={true}
+        receiveShadow={true}
+      >
+        <sphereGeometry args={[
+          radius,
+          12,
+          8,
+        ]} />
+        <meshStandardMaterial color='red' />
+      </mesh>
+    </RigidBody>
+  );
+}
+
+function FloatingCube() {
+  return (
+    <RigidBody
+      type='fixed'
+      position={[
+        3,
+        .5,
+        0,
+      ]}
+    >
+      <mesh
+        castShadow={true}
+        receiveShadow={true}
+      >
+        <boxGeometry args={[
+          1,
+          1,
+          1,
+        ]} />
+        <meshStandardMaterial color='green' />
+      </mesh>
+    </RigidBody>
   );
 }
 
 function Ground() {
-  const [ref] = usePlane<Mesh>(() => ({
-    rotation: [
-      -Math.PI / 2,
-      0,
-      0,
-    ],
-    position: [
-      0,
-      0,
-      0,
-    ],
-    material: {
-      restitution: .5,
-    },
-  }));
   return (
-    <mesh
-      ref={ref}
-      receiveShadow={true}
+    <RigidBody
+      rotation={[
+        -Math.PI / 2,
+        0,
+        0,
+      ]}
+      restitution={.5}
+      mass={undefined}
     >
-      <planeGeometry
-        args={[
-          1000,
-          1000,
-        ]}
-      />
-      <meshStandardMaterial color='pink' />
-    </mesh>
+      <mesh
+        receiveShadow={true}
+      >
+        <planeGeometry
+          args={[
+            1000,
+            1000,
+          ]}
+        />
+        <meshStandardMaterial color='pink' />
+      </mesh>
+    </RigidBody>
   );
 }
 
@@ -87,6 +108,10 @@ export function install() {
     scene: Scene,
   }) {
     const camera = useRef(new PerspectiveCamera());
+    const setLight = useCallback(function (light: DirectionalLight) {
+      light.shadow.camera.left = light.shadow.camera.bottom = -10;
+      light.shadow.camera.right = light.shadow.camera.top = 10;
+    }, []);
 
     useReaction<Vector3>(
       function () {
@@ -115,25 +140,31 @@ export function install() {
       >
         <ambientLight intensity={.5} />
         <directionalLight
+          ref={setLight}
           position={[
-            -.5,
-            1,
+            0,
+            10,
             0,
           ]}
           castShadow={true}
-        />
-        <Physics>
-          <SuperBall radius={.3} />
-          <Ground />
-          {scene.entities.map(function (entity) {
-            const Renderer = rendererRegistry.getRenderer(entity);
-            return Renderer && (
-              <Renderer
-                key={entity.id}
-              />
-            );
-          })}
-        </Physics>
+        >
+        </directionalLight>
+        {/* TODO: integrate physics initialization into existing async handling */}
+        <Suspense>
+          <Physics>
+            <SuperBall radius={.3} />
+            <FloatingCube />
+            <Ground />
+            {scene.entities.map(function (entity) {
+              const Renderer = rendererRegistry.getRenderer(entity);
+              return Renderer && (
+                <Renderer
+                  key={entity.id}
+                />
+              );
+            })}
+          </Physics>
+        </Suspense>
       </Canvas>
     );
   });
