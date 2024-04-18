@@ -6,6 +6,7 @@ import {
 import {
   computeCameraDistance,
   PLAYER_HEIGHT,
+  RESERVED_HEIGHT,
   type Scene,
 } from 'app/domain/scene';
 import { useReaction } from 'base/react/mobx';
@@ -49,13 +50,13 @@ function SuperBall({ radius }: { radius: number }) {
   );
 }
 
-function FloatingCube() {
+function BouncyCube() {
   return (
     <RigidBody
-      type='fixed'
+      restitution={1}
       position={[
         3,
-        .5,
+        .2,
         0,
       ]}
     >
@@ -64,9 +65,9 @@ function FloatingCube() {
         receiveShadow={true}
       >
         <boxGeometry args={[
-          1,
-          1,
-          1,
+          .4,
+          .4,
+          .4,
         ]} />
         <meshStandardMaterial color='green' />
       </mesh>
@@ -109,8 +110,8 @@ export function install() {
   }) {
     const camera = useRef(new PerspectiveCamera());
     const setLight = useCallback(function (light: DirectionalLight) {
-      light.shadow.camera.left = light.shadow.camera.bottom = -10;
-      light.shadow.camera.right = light.shadow.camera.top = 10;
+      light.shadow.camera.left = light.shadow.camera.bottom = -RESERVED_HEIGHT;
+      light.shadow.camera.right = light.shadow.camera.top = RESERVED_HEIGHT;
     }, []);
 
     useReaction<Vector3>(
@@ -135,14 +136,14 @@ export function install() {
 
     return (
       <Canvas
-        shadows={true}
+        shadows='soft'
         camera={camera.current}
       >
         <ambientLight intensity={.5} />
         <directionalLight
           ref={setLight}
           position={[
-            0,
+            3,
             10,
             0,
           ]}
@@ -153,7 +154,7 @@ export function install() {
         <Suspense>
           <Physics>
             <SuperBall radius={.3} />
-            <FloatingCube />
+            <BouncyCube />
             <Ground />
             {scene.entities.map(function (entity) {
               const Renderer = rendererRegistry.getRenderer(entity);

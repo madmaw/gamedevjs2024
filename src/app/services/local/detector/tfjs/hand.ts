@@ -61,7 +61,7 @@ class TFJSHandDetector extends TFJSBaseDetector<HandScan> {
           z,
           name,
           score: keypointScore,
-        }, i) => {
+        }) => {
           if (name != null && z != null) {
             const keypoint2D = hand.keypoints.find(keypoint2D => keypoint2D.name === name);
             if (keypoint2D != null) {
