@@ -1,6 +1,9 @@
+import { type World } from '@dimforge/rapier3d-compat';
 import {
   type RapierRigidBody,
   RigidBody,
+  useBeforePhysicsStep,
+  useSphericalJoint,
 } from '@react-three/rapier';
 import {
   CorticalID,
@@ -9,14 +12,19 @@ import {
 import {
   type Hand,
   type Joint,
+  PLAYER_INTERACTION_GROUP,
   type PlayerEntity,
 } from 'app/domain/scene';
 import { type EntityRendererProps } from 'app/pages/main/scene/renderer';
 import { type Node } from 'base/graph/types';
 import Color from 'colorjs.io';
 import { observer } from 'mobx-react';
-import { useRef } from 'react';
 import {
+  type RefObject,
+  useRef,
+} from 'react';
+import {
+  Euler,
   Matrix4,
   Quaternion,
   Vector3,
@@ -31,18 +39,19 @@ const DEBUG_COLORS: Partial<Record<CorticalID, Color>> = {
 };
 
 const HAND_WIDTH = .8;
-const HAND_LENGTH = .8;
+const HAND_LENGTH = .6;
 const HAND_DEPTH = .2;
-const FINGER_RADIUS = HAND_DEPTH * .5;
+const BASE_FINGER_RADIUS = HAND_DEPTH * .5;
+const FINGER_GAP = HAND_DEPTH;
 const BASE_FINGER_LENGTH = .15;
 
 const HAND_SIZE: [number, number, number] = [
-  HAND_WIDTH,
   HAND_LENGTH,
+  HAND_WIDTH,
   HAND_DEPTH,
 ];
 const HAND_OFFSET: [number, number, number] = [
-  HAND_WIDTH / 2,
+  HAND_LENGTH / 2,
   0,
   0,
 ];
@@ -50,35 +59,89 @@ const HAND_OFFSET: [number, number, number] = [
 export const FingerRenderer = observer(function ({
   segment,
   position,
+  parents,
+  parentRef,
+  parentTranslation,
   parentRotation,
   length,
+  radius,
 }: {
   segment: Node<Joint>,
   position: Vector3,
+  parents: readonly Node<Joint>[],
+  parentRef: RefObject<RapierRigidBody>,
+  parentTranslation: Vector3,
   parentRotation: Quaternion,
   length: number,
+  radius: number,
 }) {
-  const rotation = segment.value.rotation.clone().premultiply(parentRotation);
+  // TODO just have a sensible starting position and don't do all these calculations
+  // as the physics is updated immediately to represent the actual rotation anyway
+  const fingerSegmentRef = useRef<RapierRigidBody>(null);
+  const rotation = parentRotation; // segment.value.rotation.clone().premultiply(parentRotation);
   const fullRotation = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI / 2).premultiply(rotation);
   const bodyPosition = new Vector3(
     length / 2,
     0,
     0,
   ).applyQuaternion(rotation).add(position);
+  // TODO avoid expensive calculations
+  const bodyPositionRef = useRef(bodyPosition);
+  const fullRotationRef = useRef(fullRotation);
+
+  useBeforePhysicsStep(function (world: World) {
+    if (fingerSegmentRef.current) {
+      const currentRotation = fingerSegmentRef.current.rotation();
+      const targetRotation = parents.reduce(
+        function (acc, parent) {
+          return acc.premultiply(parent.value.rotation);
+        },
+        new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), -Math.PI / 2)
+          .premultiply(new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), Math.PI / 2))
+          .premultiply(segment.value.rotation),
+      );
+      const deltaRotation = new Quaternion(
+        currentRotation.x,
+        currentRotation.y,
+        currentRotation.z,
+        currentRotation.w,
+      ).invert().premultiply(targetRotation);
+      const deltaEuler = new Euler().setFromQuaternion(deltaRotation);
+      const deltaVector = new Vector3().setFromEuler(deltaEuler).multiplyScalar(1 / world.timestep);
+
+      // console.log(new Vector3(1, 0, 0).applyQuaternion(targetRotation));
+
+      // fingerSegmentRef.current.setAngvel(deltaVector, true);
+      fingerSegmentRef.current.setRotation(targetRotation, true);
+    }
+  });
+
+  const joint = useSphericalJoint(parentRef, fingerSegmentRef, [
+    parentTranslation.toArray(),
+    [
+      0,
+      -length / 2,
+      0,
+    ],
+  ]);
+
   return (
     <>
       <RigidBody
-        quaternion={fullRotation}
-        position={bodyPosition}
-        lockRotations={true}
-        lockTranslations={true}
+        ref={fingerSegmentRef}
+        quaternion={fullRotationRef.current}
+        position={bodyPositionRef.current}
+        collisionGroups={PLAYER_INTERACTION_GROUP}
+        gravityScale={0}
+        restitution={0}
+        mass={1}
+        // lockRotations={true}
+        // lockTranslations={true}
       >
-        <mesh
-          castShadow={true}
-        >
+        <mesh castShadow={true}>
           <capsuleGeometry
             args={[
-              FINGER_RADIUS,
+              radius,
               length,
               6,
               6,
@@ -88,41 +151,60 @@ export const FingerRenderer = observer(function ({
         </mesh>
       </RigidBody>
       {segment.connections.map(function (connection) {
-        const childPosition = new Vector3(length, 0, 0).applyQuaternion(rotation).add(position);
-        return (
-          <FingerRenderer
-            key={connection.value.id}
-            segment={connection}
-            position={childPosition}
-            parentRotation={rotation}
-            length={length * .8}
-          />
-        );
+        // only render segments that have two ends (i.e. not the tip)
+        if (connection.connections.length > 0) {
+          return (
+            <FingerRenderer
+              key={connection.value.id}
+              segment={connection}
+              position={new Vector3(length, 0, 0).applyQuaternion(rotation).add(bodyPosition)}
+              parents={[
+                segment,
+                ...parents,
+              ]}
+              parentRef={fingerSegmentRef}
+              parentTranslation={new Vector3(0, length, 0)}
+              parentRotation={rotation}
+              length={length * .9}
+              radius={radius}
+            />
+          );
+        }
       })}
     </>
   );
 });
 
-const HAND_FINGER_OFFSETS: [Vector3, number][] = [
+const HAND_FINGER_OFFSETS: [Vector3, number, number][] = [
+  // thumb
   [
-    new Vector3(HAND_LENGTH * .4, HAND_WIDTH / 2 + FINGER_RADIUS, 0),
+    new Vector3(HAND_LENGTH * .4, HAND_WIDTH / 2 + BASE_FINGER_RADIUS, 0),
     BASE_FINGER_LENGTH,
+    BASE_FINGER_RADIUS * 1.1,
   ],
+  // index
   [
-    new Vector3(HAND_LENGTH, HAND_WIDTH / 2 - FINGER_RADIUS, 0),
+    new Vector3(HAND_LENGTH, HAND_WIDTH / 2 - BASE_FINGER_RADIUS, 0),
     BASE_FINGER_LENGTH * 1.5,
+    BASE_FINGER_RADIUS,
   ],
+  // middle
   [
-    new Vector3(HAND_LENGTH, HAND_WIDTH / 2 - FINGER_RADIUS * 3, 0),
+    new Vector3(HAND_LENGTH, HAND_WIDTH / 2 - BASE_FINGER_RADIUS - FINGER_GAP, 0),
     BASE_FINGER_LENGTH * 1.8,
+    BASE_FINGER_RADIUS,
   ],
+  // ring
   [
-    new Vector3(HAND_LENGTH, FINGER_RADIUS * 3 - HAND_WIDTH / 2, 0),
+    new Vector3(HAND_LENGTH, BASE_FINGER_RADIUS + FINGER_GAP - HAND_WIDTH / 2, 0),
     BASE_FINGER_LENGTH * 1.5,
+    BASE_FINGER_RADIUS,
   ],
+  // pinky
   [
-    new Vector3(HAND_LENGTH, FINGER_RADIUS - HAND_WIDTH / 2, 0),
+    new Vector3(HAND_LENGTH, BASE_FINGER_RADIUS - HAND_WIDTH / 2, 0),
     BASE_FINGER_LENGTH,
+    BASE_FINGER_RADIUS * .9,
   ],
 ];
 
@@ -133,17 +215,47 @@ export const HandRenderer = observer(function ({
   hand: Hand,
   transform: Matrix4,
 }) {
-  const ref = useRef<RapierRigidBody | null>(null);
+  const palmRef = useRef<RapierRigidBody>(null);
+  const initialPosition = useRef(hand.position);
+  const initialRotation = useRef(hand.wrist.value.rotation);
+
+  useBeforePhysicsStep(function (world: World) {
+    if (palmRef.current) {
+      const currentPosition = palmRef.current.translation();
+      const targetPosition = hand.position;
+      const delta = targetPosition.clone().sub(currentPosition);
+      // move to the target position
+      // ref.current.setTranslation(targetPosition, true);
+      palmRef.current.setLinvel(delta.multiplyScalar(.5 / world.timestep), true);
+
+      const currentRotation = palmRef.current.rotation();
+      const targetRotation = hand.wrist.value.rotation;
+      const deltaRotation = new Quaternion(
+        currentRotation.x,
+        currentRotation.y,
+        currentRotation.z,
+        currentRotation.w,
+      ).invert().premultiply(targetRotation);
+      const deltaEuler = new Euler().setFromQuaternion(deltaRotation);
+      const deltaVector = new Vector3().setFromEuler(deltaEuler).multiplyScalar(.5 / world.timestep);
+
+      palmRef.current.setAngvel(deltaVector, true);
+    }
+  });
+
   const rotation = hand.wrist.value.rotation;
   return (
     <>
       <RigidBody
-        ref={ref}
-        quaternion={rotation}
-        position={hand.position}
-        lockRotations={true}
-        lockTranslations={true}
-        mass={0}
+        ref={palmRef}
+        quaternion={initialRotation.current}
+        position={initialPosition.current}
+        gravityScale={0}
+        restitution={0}
+        mass={1000}
+        collisionGroups={PLAYER_INTERACTION_GROUP}
+        // lockRotations={true}
+        // lockTranslations={true}
       >
         {/* palm */}
         <mesh
@@ -159,24 +271,30 @@ export const HandRenderer = observer(function ({
         </mesh>
       </RigidBody>
       {hand.wrist.connections.map(function (connection, i) {
-        const [
-          offset,
-          length,
-        ] = HAND_FINGER_OFFSETS[i];
-        const position = offset
-          .clone()
-          .applyMatrix4(transform)
-          .applyQuaternion(rotation)
-          .add(hand.position);
-        return (
-          <FingerRenderer
-            key={connection.value.id}
-            segment={connection}
-            position={position}
-            parentRotation={rotation}
-            length={length}
-          />
-        );
+        const fingerOffset = HAND_FINGER_OFFSETS[i];
+        if (fingerOffset) {
+          const [
+            offset,
+            length,
+            radius,
+          ] = fingerOffset;
+          const parentTranslation = offset
+            .clone()
+            .applyMatrix4(transform);
+          return (
+            <FingerRenderer
+              key={connection.value.id}
+              segment={connection}
+              position={hand.position.clone().add(parentTranslation.clone().applyQuaternion(rotation))}
+              parents={[hand.wrist]}
+              parentRef={palmRef}
+              parentTranslation={parentTranslation}
+              parentRotation={rotation}
+              length={length}
+              radius={radius}
+            />
+          );
+        }
       })}
     </>
   );

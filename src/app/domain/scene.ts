@@ -1,3 +1,4 @@
+import { interactionGroups } from '@react-three/rapier';
 import { type Node } from 'base/graph/types';
 import {
   computed,
@@ -21,6 +22,17 @@ export const PLAYABLE_HEIGHT = 4;
 export function computeCameraDistance(screenAspectRatio: number = window.innerWidth / window.innerHeight) {
   return RESERVED_HEIGHT * Math.max(1, RESERVED_ASPECT_RATIO / screenAspectRatio) / (2 * Math.tan(FOV_Y / 2));
 }
+
+const TERRAIN_COLLISION_GROUP = 1;
+const PLAYER_COLLISION_GROUP = 2;
+const SCENERY_COLLISION_GROUP = 3;
+
+export const TERRAIN_INTERACTION_GROUP = interactionGroups([TERRAIN_COLLISION_GROUP], [SCENERY_COLLISION_GROUP]);
+export const PLAYER_INTERACTION_GROUP = interactionGroups([PLAYER_COLLISION_GROUP], [SCENERY_COLLISION_GROUP]);
+export const SCENERY_INTERACTION_GROUP = interactionGroups([SCENERY_COLLISION_GROUP], [
+  TERRAIN_COLLISION_GROUP,
+  PLAYER_COLLISION_GROUP,
+]);
 
 export class Scene {
   nextEntityId: number = 1;

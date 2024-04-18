@@ -8,6 +8,8 @@ import {
   PLAYER_HEIGHT,
   RESERVED_HEIGHT,
   type Scene,
+  SCENERY_INTERACTION_GROUP,
+  TERRAIN_INTERACTION_GROUP,
 } from 'app/domain/scene';
 import { useReaction } from 'base/react/mobx';
 import { observer } from 'mobx-react';
@@ -34,6 +36,7 @@ function SuperBall({ radius }: { radius: number }) {
       restitution={1}
       colliders={'ball'}
       mass={1}
+      collisionGroups={SCENERY_INTERACTION_GROUP}
     >
       <mesh
         castShadow={true}
@@ -59,6 +62,7 @@ function BouncyCube() {
         .2,
         0,
       ]}
+      collisionGroups={SCENERY_INTERACTION_GROUP}
     >
       <mesh
         castShadow={true}
@@ -83,8 +87,9 @@ function Ground() {
         0,
         0,
       ]}
-      restitution={.5}
-      mass={undefined}
+      restitution={0}
+      type='fixed'
+      collisionGroups={TERRAIN_INTERACTION_GROUP}
     >
       <mesh
         receiveShadow={true}
