@@ -4,12 +4,14 @@ import {
   useSphere,
 } from '@react-three/cannon';
 import { Canvas } from '@react-three/fiber';
-import { type Scene } from 'app/domain/scene';
-import { observer } from 'mobx-react';
 import {
-  useEffect,
-  useRef,
-} from 'react';
+  computeCameraDistance,
+  PLAYER_HEIGHT,
+  type Scene,
+} from 'app/domain/scene';
+import { useReaction } from 'base/react/mobx';
+import { observer } from 'mobx-react';
+import { useRef } from 'react';
 import {
   type Mesh,
   PerspectiveCamera,
@@ -22,7 +24,7 @@ function SuperBall({ radius }: { radius: number }) {
     mass: 1,
     position: [
       0,
-      1,
+      3,
       0,
     ],
     args: [radius],
@@ -54,7 +56,7 @@ function Ground() {
     ],
     position: [
       0,
-      -2,
+      0,
       0,
     ],
     material: {
@@ -85,17 +87,26 @@ export function install() {
     scene: Scene,
   }) {
     const camera = useRef(new PerspectiveCamera());
-    useEffect(function () {
-      // adjust the camera to follow the users head
-      const cameraPosition = camera.current.position;
-      const eyePosition = scene.player?.eyePosition;
-      cameraPosition.copy(eyePosition ?? new Vector3(0, 0, 10));
-      camera.current.lookAt(eyePosition?.clone().sub(new Vector3(0, 0, 10)) ?? new Vector3());
-    }, [
-      scene.scanSize,
-      scene.player,
-      scene.player?.eyePosition,
-    ]);
+
+    useReaction<Vector3>(
+      function () {
+        return scene.player
+          ? scene.player.position.clone().add(scene.player.headOffset)
+          : new Vector3(0, PLAYER_HEIGHT, computeCameraDistance());
+      },
+      [scene.player],
+      function (position) {
+        camera.current.position.copy(position);
+        // not really required after the first time
+        camera.current.lookAt(position.clone().sub(new Vector3(0, 0, computeCameraDistance())));
+      },
+      {
+        fireImmediately: true,
+        equals: function (a, b) {
+          return a.equals(b);
+        },
+      },
+    );
 
     return (
       <Canvas
@@ -105,7 +116,7 @@ export function install() {
         <ambientLight intensity={.5} />
         <directionalLight
           position={[
-            -1,
+            -.5,
             1,
             0,
           ]}

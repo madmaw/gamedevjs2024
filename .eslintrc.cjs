@@ -195,7 +195,7 @@ module.exports = {
     'react-hooks/exhaustive-deps': [
       'error',
       {
-        additionalHooks: '(usePartialComponent|usePartialObserverComponent)',
+        additionalHooks: '(usePartialComponent|usePartialObserverComponent|useWhen|useReaction|useAutorun)',
       },
     ],
     '@typescript-eslint/consistent-type-imports': [

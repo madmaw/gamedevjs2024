@@ -3,7 +3,10 @@ import {
   HandKind,
 } from 'app/domain/pose';
 import {
+  computeCameraDistance,
   type Joint,
+  PLAYABLE_HEIGHT,
+  PLAYER_HEIGHT,
   type PlayerEntity,
   PlayerEntityImpl,
 } from 'app/domain/scene';
@@ -19,7 +22,6 @@ import {
   useRef,
 } from 'react';
 import {
-  Euler,
   Quaternion,
   Vector3,
 } from 'three';
@@ -63,8 +65,7 @@ function installPlay({ Debug }: { Debug: Play | undefined }) {
       const player = new PlayerEntityImpl(
         scene.nextEntityId++,
       );
-      // TODO compensate for model rotation elsewhere
-      player.rotation = new Quaternion().setFromEuler(new Euler(Math.PI * 2 / 3, Math.PI, 0));
+      player.position.copy(new Vector3(0, 0, computeCameraDistance()));
       return player;
     }, [scene]);
 
@@ -74,6 +75,7 @@ function installPlay({ Debug }: { Debug: Play | undefined }) {
           player,
         );
       });
+      // TODO remove player on unmount
     }, [
       scene,
       player,
@@ -94,7 +96,7 @@ function installPlay({ Debug }: { Debug: Play | undefined }) {
             if (keypoint != null && keypoint.score > .6) {
               // x is flipped due to mirroring, y is flipped due to using pixel coordinates, and z
               // is flipped it is measuring depth, we keep z as is because the model is detecting us facing
-              // outward and we want to detect facing inward
+              // outward and we want to detect facing inward (so double flip cancels out)
               keyPositions[corticalId] = new Vector3(
                 -keypoint.relativePosition[0],
                 -keypoint.relativePosition[1],
@@ -102,26 +104,63 @@ function installPlay({ Debug }: { Debug: Play | undefined }) {
               );
             }
           }
+
           const playerKeypoints = {
             ...player.keypoints,
             ...keyPositions,
           };
           runInAction(function () {
             player.keypoints = playerKeypoints;
-            const nosePosition = poses[0].keypoints['nose']?.screenPosition;
-            if (nosePosition != null && size != null) {
-              const [
-                width,
-                height,
-              ] = size;
-              const minDimension = Math.min(width, height);
+            const nosePosition = poses[0].keypoints[CorticalID.Nose]?.screenPosition;
+            const [
+              width,
+              height,
+            ] = size;
+            const minDimension = Math.min(width, height);
+
+            if (nosePosition != null) {
               const dx = (width / 2 - nosePosition[0]) / minDimension;
               const dy = (height / 2 - nosePosition[1]) / minDimension;
-              player.eyePosition = new Vector3(dx, dy, 10);
+              player.headOffset = new Vector3(dx, dy + PLAYER_HEIGHT, 0);
             }
 
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            const windowAspectRatio = windowWidth / windowHeight;
+            const scanAspectRatio = width / height;
+
+            ([
+              [
+                CorticalID.RightWrist,
+                HandKind.Right,
+              ],
+              [
+                CorticalID.LeftWrist,
+                HandKind.Left,
+              ],
+            ] as const).forEach(
+              function ([
+                id,
+                kind,
+              ]) {
+                const wristPosition = poses[0].keypoints[id]?.screenPosition;
+                if (wristPosition != null) {
+                  const dx = (wristPosition[0] - width / 2) * 2 / width;
+                  // base bottom of screen at 0
+                  const dy = (wristPosition[1] - height) / height;
+                  const y = dy * PLAYABLE_HEIGHT;
+                  const x = dx * PLAYABLE_HEIGHT * scanAspectRatio;
+                  player.hands[kind].position = player.position.clone().sub(new Vector3(
+                    x,
+                    y,
+                    computeCameraDistance(windowAspectRatio),
+                  ));
+                }
+              },
+            );
+
             scene.scanSize = size;
-            convertHandRotations(player);
+            applyHandsKeypoints(player);
           });
         }
       });
@@ -134,18 +173,18 @@ function installPlay({ Debug }: { Debug: Play | undefined }) {
 
     const update = useCallback(function (now: number) {
       const delta = now - thenRef.current;
+      // TODO update anything that needs updating
+      player.position.z = computeCameraDistance() - scene.progress;
       thenRef.current = now;
-      runInAction(function () {
-        player.rotation = player.rotation.clone().multiply(
-          new Quaternion().setFromEuler(new Euler(Math.PI * delta / 1999, 0, 0)),
-        );
-      });
       const handle = requestAnimationFrame(update);
       handleRef.current = handle;
-    }, [player]);
+    }, [
+      scene,
+      player,
+    ]);
 
     useEffect(function () {
-      // update(0);
+      update(0);
       return function () {
         cancelAnimationFrame(handleRef.current!);
       };
@@ -199,9 +238,10 @@ const HANDS = [
 ];
 
 // TODO move into a separate file
-function convertHandRotations({
+function applyHandsKeypoints({
   keypoints,
   hands,
+  position,
 }: PlayerEntity) {
   for (const handData of HANDS) {
     const {
@@ -247,7 +287,7 @@ function convertHandRotations({
       const inverseQ = q.clone().invert();
 
       hand.wrist.connections.forEach(function (connection) {
-        convertFingerRotations(
+        applyFingerKeypoints(
           keypoints,
           kind,
           connection,
@@ -264,7 +304,7 @@ function convertHandRotations({
   }
 }
 
-function convertFingerRotations(
+function applyFingerKeypoints(
   keypoints: Partial<Record<CorticalID, Vector3>>,
   kind: HandKind,
   // TODO: do we need both segment and joint?
@@ -297,7 +337,7 @@ function convertFingerRotations(
     });
 
     if (nextJoint != null) {
-      convertFingerRotations(
+      applyFingerKeypoints(
         keypoints,
         kind,
         nextJoint,

@@ -124,7 +124,7 @@ export const HandRenderer = observer(function ({
             .1,
           ]}
         />
-        <meshStandardMaterial color='green' />
+        <meshStandardMaterial color='orange' />
       </mesh>
       {hand.wrist.connections.map(function (connection, i) {
         const [

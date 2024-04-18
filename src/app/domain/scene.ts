@@ -12,6 +12,16 @@ import {
   HandKind,
 } from './pose';
 
+export const FOV_Y = Math.PI * 5 / (2 * 9); // 50 degrees (default)
+export const PLAYER_HEIGHT = 2;
+export const RESERVED_ASPECT_RATIO = 3 / 2; // narrowest common webcam aspect ratio
+export const RESERVED_HEIGHT = 5;
+export const PLAYABLE_HEIGHT = 4;
+
+export function computeCameraDistance(screenAspectRatio: number = window.innerWidth / window.innerHeight) {
+  return RESERVED_HEIGHT * Math.max(1, RESERVED_ASPECT_RATIO / screenAspectRatio) / (2 * Math.tan(FOV_Y / 2));
+}
+
 export class Scene {
   nextEntityId: number = 1;
 
@@ -20,6 +30,9 @@ export class Scene {
 
   @observable.shallow
   accessor entities: Entity[] = [];
+
+  @observable.ref
+  accessor progress: number = 0;
 
   @computed
   get player(): PlayerEntity | undefined {
@@ -45,7 +58,7 @@ type BaseEntity<T extends EntityType> = {
 export type PlayerEntity = BaseEntity<EntityType.Player> & {
   keypoints: Partial<Readonly<Record<CorticalID, Vector3>>>,
 
-  eyePosition: Vector3 | undefined,
+  headOffset: Vector3,
 
   readonly hands: Record<HandKind, Hand>,
 };
@@ -71,7 +84,7 @@ export class PlayerEntityImpl extends SimpleEntity<EntityType.Player> implements
   accessor keypoints: Partial<Record<CorticalID, Vector3>> = {};
 
   @observable.ref
-  accessor eyePosition: Vector3 | undefined;
+  accessor headOffset: Vector3 = new Vector3(0, PLAYER_HEIGHT, 0);
 
   readonly hands: Record<HandKind, Hand> = {
     [HandKind.Left]: new Hand(),
