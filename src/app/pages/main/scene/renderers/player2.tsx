@@ -1,4 +1,8 @@
 import {
+  type Triplet,
+  useCompoundBody,
+} from '@react-three/cannon';
+import {
   CorticalID,
   HandKind,
 } from 'app/domain/pose';
@@ -12,6 +16,7 @@ import { type Node } from 'base/graph/types';
 import Color from 'colorjs.io';
 import { observer } from 'mobx-react';
 import {
+  type Group,
   Matrix4,
   Quaternion,
   Vector3,
@@ -24,6 +29,23 @@ const DEBUG_COLORS: Partial<Record<CorticalID, Color>> = {
   [CorticalID.RightPinkyFingerMCP]: new Color('orange'),
   [CorticalID.RightMiddleFingerPIP]: new Color('magenta'),
 };
+
+const HAND_WIDTH = .8;
+const HAND_LENGTH = .8;
+const HAND_DEPTH = .2;
+const FINGER_RADIUS = HAND_DEPTH * .5;
+const BASE_FINGER_LENGTH = .2;
+
+const HAND_SIZE: Triplet = [
+  HAND_WIDTH,
+  HAND_LENGTH,
+  HAND_DEPTH,
+];
+const HAND_OFFSET: Triplet = [
+  HAND_WIDTH / 2,
+  0,
+  0,
+];
 
 export const FingerRenderer = observer(function ({
   segment,
@@ -50,7 +72,7 @@ export const FingerRenderer = observer(function ({
         >
           <capsuleGeometry
             args={[
-              .05,
+              FINGER_RADIUS,
               length,
               6,
               6,
@@ -75,24 +97,24 @@ export const FingerRenderer = observer(function ({
 
 const HAND_FINGER_POSITIONS: [Vector3, number][] = [
   [
-    new Vector3(.15, .25, 0),
-    .1,
+    new Vector3(HAND_LENGTH * .4, HAND_WIDTH / 2 + FINGER_RADIUS, 0),
+    BASE_FINGER_LENGTH,
   ],
   [
-    new Vector3(.4, .15, 0),
-    .15,
+    new Vector3(HAND_LENGTH, HAND_WIDTH / 2 - FINGER_RADIUS, 0),
+    BASE_FINGER_LENGTH * 1.5,
   ],
   [
-    new Vector3(.4, .05, 0),
-    .18,
+    new Vector3(HAND_LENGTH, HAND_WIDTH / 2 - FINGER_RADIUS * 3, 0),
+    BASE_FINGER_LENGTH * 1.8,
   ],
   [
-    new Vector3(.4, -.05, 0),
-    .15,
+    new Vector3(HAND_LENGTH, FINGER_RADIUS * 3 - HAND_WIDTH / 2, 0),
+    BASE_FINGER_LENGTH * 1.5,
   ],
   [
-    new Vector3(.4, -.15, 0),
-    .1,
+    new Vector3(HAND_LENGTH, FINGER_RADIUS - HAND_WIDTH / 2, 0),
+    BASE_FINGER_LENGTH,
   ],
 ];
 
@@ -103,26 +125,36 @@ export const HandRenderer = observer(function ({
   hand: Hand,
   transform: Matrix4,
 }) {
+  const [
+    box,
+    api,
+  ] = useCompoundBody<Group>(() => ({
+    position: hand.position.toArray(),
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    quaternion: hand.wrist.value.rotation.toArray() as [number, number, number, number],
+    mass: 1,
+    shapes: [
+      {
+        type: 'Box',
+        args: HAND_SIZE,
+        position: HAND_OFFSET,
+      },
+    ],
+  }));
+
   return (
     <group
-      position={hand.position}
+      // ref={box}
       quaternion={hand.wrist.value.rotation}
+      position={hand.position}
     >
       {/* palm */}
       <mesh
-        position={[
-          .2,
-          0,
-          0,
-        ]}
+        position={HAND_OFFSET}
         castShadow={true}
       >
         <boxGeometry
-          args={[
-            .4,
-            .4,
-            .1,
-          ]}
+          args={HAND_SIZE}
         />
         <meshStandardMaterial color='orange' />
       </mesh>

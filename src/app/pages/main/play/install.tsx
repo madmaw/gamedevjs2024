@@ -175,6 +175,7 @@ function installPlay({ Debug }: { Debug: Play | undefined }) {
       const delta = now - thenRef.current;
       // TODO update anything that needs updating
       player.position.z = computeCameraDistance() - scene.progress;
+
       thenRef.current = now;
       const handle = requestAnimationFrame(update);
       handleRef.current = handle;

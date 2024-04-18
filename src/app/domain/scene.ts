@@ -87,8 +87,14 @@ export class PlayerEntityImpl extends SimpleEntity<EntityType.Player> implements
   accessor headOffset: Vector3 = new Vector3(0, PLAYER_HEIGHT, 0);
 
   readonly hands: Record<HandKind, Hand> = {
-    [HandKind.Left]: new Hand(),
-    [HandKind.Right]: new Hand(),
+    [HandKind.Left]: new Hand(
+      new Vector3(-1, 1, 0),
+      new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI / 2),
+    ),
+    [HandKind.Right]: new Hand(
+      new Vector3(1, 1, 0),
+      new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI / 2),
+    ),
   };
 
   constructor(id: number) {
@@ -106,9 +112,10 @@ export class Hand {
 
   readonly wrist: Skeleton;
 
-  constructor() {
+  constructor(position: Vector3, rotation: Quaternion) {
+    this.position.copy(position);
     this.wrist = {
-      value: new Joint(HandJointID.Wrist),
+      value: new Joint(HandJointID.Wrist, rotation),
       connections: [
         // thumb
         {
@@ -243,7 +250,10 @@ export class Joint {
   @observable.ref
   accessor rotation: Quaternion = new Quaternion();
 
-  constructor(readonly id: HandJointID) {
+  constructor(readonly id: HandJointID, rotation?: Quaternion) {
+    if (rotation != null) {
+      this.rotation.copy(rotation);
+    }
   }
 }
 

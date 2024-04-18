@@ -10,7 +10,6 @@ import {
 import { type Detector } from 'app/services/detector';
 import { type LoggingService } from 'app/services/logging';
 import { exists } from 'base/exists';
-import { checkState } from 'base/preconditions';
 import { UnreachableError } from 'base/unreachable_error';
 import {
   getSize,
@@ -63,32 +62,28 @@ class TFJSHandDetector extends TFJSBaseDetector<HandScan> {
           name,
           score: keypointScore,
         }, i) => {
-          const keypoint2D = hand.keypoints[i];
-          checkState(
-            keypoint2D?.name === name,
-            '2D and 3D keypoints do not match: {0} != {1}',
-            keypoint2D?.name,
-            name,
-          );
           if (name != null && z != null) {
-            // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-            const handId = name as HandID;
-            const {
-              x: screenX,
-              y: screenY,
-            } = keypoint2D;
-            keypoints[handId] = {
-              relativePosition: [
-                x,
-                y,
-                z,
-              ],
-              score: keypointScore ?? score,
-              screenPosition: [
-                screenX,
-                screenY,
-              ],
-            };
+            const keypoint2D = hand.keypoints.find(keypoint2D => keypoint2D.name === name);
+            if (keypoint2D != null) {
+              // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+              const handId = name as HandID;
+              const {
+                x: screenX,
+                y: screenY,
+              } = keypoint2D;
+              keypoints[handId] = {
+                relativePosition: [
+                  x,
+                  y,
+                  z,
+                ],
+                score: keypointScore ?? score,
+                screenPosition: [
+                  screenX,
+                  screenY,
+                ],
+              };
+            }
           }
           return keypoints;
         },
