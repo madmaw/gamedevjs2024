@@ -5,10 +5,10 @@ import {
 import {
   computeCameraDistance,
   type Joint,
-  PLAYABLE_HEIGHT,
   PLAYER_HEIGHT,
   type PlayerEntity,
   PlayerEntityImpl,
+  RESERVED_HEIGHT,
 } from 'app/domain/scene';
 import { type EntityRendererRegistry } from 'app/pages/main/scene/renderer';
 import { type CorticalDetectorService } from 'app/services/detector';
@@ -109,6 +109,7 @@ function installPlay({ Debug }: { Debug: Play | undefined }) {
             ...player.keypoints,
             ...keyPositions,
           };
+          const handMovementScaling = 2;
           runInAction(function () {
             player.keypoints = playerKeypoints;
             const nosePosition = poses[0].keypoints[CorticalID.Nose]?.screenPosition;
@@ -144,12 +145,16 @@ function installPlay({ Debug }: { Debug: Play | undefined }) {
                 ]) {
                   const wrist = poses[0].keypoints[id];
                   if (wrist != null) {
+                    // note screen coordinates are flipped horizontally
                     const wristScreenPosition = wrist.screenPosition;
-                    const dx = (wristScreenPosition[0] - width / 2) * 2 / width;
+                    const dx = (wristScreenPosition[0] - width / 2) / width;
                     // base bottom of screen at 0
                     const dy = (wristScreenPosition[1] - height) / height;
-                    const y = dy * PLAYABLE_HEIGHT;
-                    const x = dx * PLAYABLE_HEIGHT * scanAspectRatio;
+                    const reservedWidth = RESERVED_HEIGHT * scanAspectRatio;
+                    const y = dy * RESERVED_HEIGHT;
+                    const x = kind === HandKind.Left
+                      ? (.5 - (.5 - dx) * handMovementScaling) * reservedWidth
+                      : (dx * handMovementScaling + .5) * reservedWidth;
                     player.hands[kind].position = player.position.clone().sub(new Vector3(
                       x,
                       y,
@@ -161,9 +166,8 @@ function installPlay({ Debug }: { Debug: Play | undefined }) {
                 },
               );
             }
-
-            scene.scanSize = size;
             applyHandsKeypoints(player);
+            scene.scanSize = size;
           });
         }
       });
@@ -242,7 +246,6 @@ const HANDS = [
 function applyHandsKeypoints({
   keypoints,
   hands,
-  position,
 }: PlayerEntity) {
   for (const handData of HANDS) {
     const {

@@ -59,7 +59,7 @@ function BouncyCube() {
     <RigidBody
       restitution={1}
       position={[
-        3,
+        2,
         .2,
         0,
       ]}
@@ -86,7 +86,7 @@ function Stick() {
     <RigidBody
       restitution={1}
       position={[
-        -1,
+        -2,
         .5,
         0,
       ]}
