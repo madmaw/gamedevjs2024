@@ -17,10 +17,11 @@ export const FOV_Y = Math.PI * 5 / (2 * 9); // 50 degrees (default)
 export const PLAYER_HEIGHT = 2;
 export const RESERVED_HEIGHT = 5;
 export const PLAYABLE_HEIGHT = 4;
+export const RESERVED_BELOW = .5;
 export const PLAYABLE_ASPECT_RATIO = 3 / 2; // narrowest common webcam aspect ratio
 
 export function computeCameraDistance(screenAspectRatio: number = window.innerWidth / window.innerHeight) {
-  return PLAYABLE_HEIGHT * Math.max(1, PLAYABLE_ASPECT_RATIO / screenAspectRatio) / (2 * Math.tan(FOV_Y / 2));
+  return RESERVED_HEIGHT * Math.max(1, PLAYABLE_ASPECT_RATIO / screenAspectRatio) / (2 * Math.tan(FOV_Y / 2));
 }
 
 const TERRAIN_COLLISION_GROUP = 1;

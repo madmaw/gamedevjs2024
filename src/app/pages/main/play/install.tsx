@@ -8,6 +8,7 @@ import {
   PLAYER_HEIGHT,
   type PlayerEntity,
   PlayerEntityImpl,
+  RESERVED_BELOW,
   RESERVED_HEIGHT,
 } from 'app/domain/scene';
 import { type EntityRendererRegistry } from 'app/pages/main/scene/renderer';
@@ -109,7 +110,7 @@ function installPlay({ Debug }: { Debug: Play | undefined }) {
             ...player.keypoints,
             ...keyPositions,
           };
-          const handMovementScaling = 2;
+          const handMovementScaling = 1.7;
           runInAction(function () {
             player.keypoints = playerKeypoints;
             const nosePosition = poses[0].keypoints[CorticalID.Nose]?.screenPosition;
@@ -151,7 +152,7 @@ function installPlay({ Debug }: { Debug: Play | undefined }) {
                     // base bottom of screen at 0
                     const dy = (wristScreenPosition[1] - height) / height;
                     const reservedWidth = RESERVED_HEIGHT * scanAspectRatio;
-                    const y = dy * RESERVED_HEIGHT;
+                    const y = dy * RESERVED_HEIGHT + RESERVED_BELOW;
                     const x = kind === HandKind.Left
                       ? (.5 - (.5 - dx) * handMovementScaling) * reservedWidth
                       : (dx * handMovementScaling + .5) * reservedWidth;
