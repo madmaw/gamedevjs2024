@@ -12,7 +12,6 @@ import {
 import { type Detector } from 'app/services/detector';
 import { type LoggingService } from 'app/services/logging';
 import { exists } from 'base/exists';
-import { checkState } from 'base/preconditions';
 import {
   getSize,
   TFJSBaseDetector,
@@ -49,19 +48,14 @@ class TFJSBodyDetector extends TFJSBaseDetector<BodyScan> {
           z,
           name,
           score,
-        }, i) => {
-          const keypoint2D = body.keypoints[i];
-          // TODO this precondition is not always true!
-          checkState(
-            keypoint2D?.name === name,
-            '2D and 3D body parts do not match: {0} != {1}',
-            keypoint2D?.name,
-            name,
-          );
-          if (name != null && x != null && y != null && z != null && score != null) {
+        }) => {
+          // TODO might be faster to use a map, or only look up the handful of 2D keypoints we care about
+          const keypoint2D = body.keypoints.find(keypoint2D => keypoint2D.name === name);
+          if (keypoint2D != null && name != null && x != null && y != null && z != null && score != null) {
             const {
               x: screenX,
               y: screenY,
+              z: screenZ = 0,
             } = keypoint2D;
             // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
             const bodyId = name as BodyID;
@@ -75,6 +69,7 @@ class TFJSBodyDetector extends TFJSBaseDetector<BodyScan> {
               screenPosition: [
                 screenX,
                 screenY,
+                screenZ,
               ],
             };
           }

@@ -1,4 +1,5 @@
 import { type World } from '@dimforge/rapier3d-compat';
+import { RoundedBox } from '@react-three/drei';
 import {
   type RapierRigidBody,
   RigidBody,
@@ -43,9 +44,10 @@ const HAND_LENGTH = .6;
 const HAND_DEPTH = .2;
 const BASE_FINGER_RADIUS = HAND_DEPTH * .5;
 const FINGER_GAP = HAND_DEPTH;
-const BASE_FINGER_LENGTH = .15;
+const BASE_FINGER_LENGTH = .1;
+const HAND_FRICTION = 1;
 
-const HAND_SIZE: [number, number, number] = [
+const HAND_ARGS: [number, number, number] = [
   HAND_LENGTH,
   HAND_WIDTH,
   HAND_DEPTH,
@@ -135,6 +137,7 @@ export const FingerRenderer = observer(function ({
         gravityScale={0}
         restitution={0}
         mass={1}
+        friction={HAND_FRICTION}
         // lockRotations={true}
         // lockTranslations={true}
       >
@@ -166,7 +169,7 @@ export const FingerRenderer = observer(function ({
               parentTranslation={new Vector3(0, length, 0)}
               parentRotation={rotation}
               length={length * .9}
-              radius={radius}
+              radius={radius * .9}
             />
           );
         }
@@ -178,8 +181,8 @@ export const FingerRenderer = observer(function ({
 const HAND_FINGER_OFFSETS: [Vector3, number, number][] = [
   // thumb
   [
-    new Vector3(HAND_LENGTH * .4, HAND_WIDTH / 2 + BASE_FINGER_RADIUS, 0),
-    BASE_FINGER_LENGTH,
+    new Vector3(HAND_LENGTH * .3, HAND_WIDTH / 2 - BASE_FINGER_RADIUS, -HAND_DEPTH / 2),
+    BASE_FINGER_LENGTH * 1.2,
     BASE_FINGER_RADIUS * 1.1,
   ],
   // index
@@ -202,7 +205,7 @@ const HAND_FINGER_OFFSETS: [Vector3, number, number][] = [
   ],
   // pinky
   [
-    new Vector3(HAND_LENGTH, BASE_FINGER_RADIUS - HAND_WIDTH / 2, 0),
+    new Vector3(HAND_LENGTH, BASE_FINGER_RADIUS * .9 - HAND_WIDTH / 2, 0),
     BASE_FINGER_LENGTH,
     BASE_FINGER_RADIUS * .9,
   ],
@@ -225,7 +228,6 @@ export const HandRenderer = observer(function ({
       const targetPosition = hand.position;
       const delta = targetPosition.clone().sub(currentPosition);
       // move to the target position
-      // ref.current.setTranslation(targetPosition, true);
       palmRef.current.setLinvel(delta.multiplyScalar(.5 / world.timestep), true);
 
       const currentRotation = palmRef.current.rotation();
@@ -254,21 +256,23 @@ export const HandRenderer = observer(function ({
         restitution={0}
         mass={1000}
         collisionGroups={PLAYER_INTERACTION_GROUP}
+        friction={HAND_FRICTION}
         // lockRotations={true}
         // lockTranslations={true}
       >
         {/* palm */}
-        <mesh
+        <RoundedBox
+          args={HAND_ARGS}
+          radius={HAND_DEPTH / 2}
+          smoothness={2}
+          bevelSegments={2}
           position={HAND_OFFSET}
           castShadow={true}
           // because the hand is symmetrical, this isn't really necessary
           matrix={transform}
         >
-          <boxGeometry
-            args={HAND_SIZE}
-          />
           <meshStandardMaterial color='orange' />
-        </mesh>
+        </RoundedBox>
       </RigidBody>
       {hand.wrist.connections.map(function (connection, i) {
         const fingerOffset = HAND_FINGER_OFFSETS[i];

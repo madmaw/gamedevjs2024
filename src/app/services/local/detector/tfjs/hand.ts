@@ -63,6 +63,7 @@ class TFJSHandDetector extends TFJSBaseDetector<HandScan> {
           score: keypointScore,
         }) => {
           if (name != null && z != null) {
+            // TODO might be faster to use a map, or only look up the handful of 2D keypoints we care about
             const keypoint2D = hand.keypoints.find(keypoint2D => keypoint2D.name === name);
             if (keypoint2D != null) {
               // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
@@ -70,6 +71,7 @@ class TFJSHandDetector extends TFJSBaseDetector<HandScan> {
               const {
                 x: screenX,
                 y: screenY,
+                z: screenZ = 0,
               } = keypoint2D;
               keypoints[handId] = {
                 relativePosition: [
@@ -81,6 +83,7 @@ class TFJSHandDetector extends TFJSBaseDetector<HandScan> {
                 screenPosition: [
                   screenX,
                   screenY,
+                  screenZ,
                 ],
               };
             }

@@ -43,13 +43,13 @@ const KeypointCanvas = styled.canvas`
 `;
 
 const POIs: Partial<Record<CorticalID, Color>> = {
-  [CorticalID.RightWrist]: new Color('white'),
+  [CorticalID.RightWrist]: new Color('red'),
   // [CorticalID.RightElbow]: new Color('white'),
-  [CorticalID.RightIndexFingerTip]: new Color('yellow'),
-  [CorticalID.RightThumbTip]: new Color('orange'),
-  [CorticalID.LeftElbow]: new Color('white'),
-  // [CorticalID.LeftWrist]: new Color('blue'),
-  // [CorticalID.LeftIndexFingerTip]: new Color('magenta'),
+  // [CorticalID.RightIndexFingerTip]: new Color('yellow'),
+  // [CorticalID.RightThumbTip]: new Color('orange'),
+  // [CorticalID.LeftElbow]: new Color('white'),
+  [CorticalID.LeftWrist]: new Color('yellow'),
+  [CorticalID.Nose]: new Color('magenta'),
   // [CorticalID.LeftThumbTip]: new Color('cyan'),
 };
 
@@ -96,6 +96,8 @@ export function install() {
               keypointCanvas.current.height = camera.videoHeight;
               ctx.clearRect(0, 0, keypointCanvas.current.width, keypointCanvas.current.height);
               ctx.strokeStyle = 'black';
+              ctx.lineWidth = 1;
+
               poses.forEach(function ({
                 keypoints,
               }) {
@@ -123,7 +125,7 @@ export function install() {
 
                   ctx.save();
                   ctx.globalAlpha = (eyes[0].score ?? 1) * (eyes[1].score ?? 1);
-                  ctx.translate(...nose.screenPosition);
+                  ctx.translate(nose.screenPosition[0], nose.screenPosition[1]);
                   ctx.rotate(angle);
                   ctx.scale(1, -1);
                   ctx.fillText('😄', 0, 0);
@@ -152,8 +154,17 @@ export function install() {
                       ctx.save();
                       ctx.translate(poi.screenPosition[0], poi.screenPosition[1]);
                       ctx.scale(-1, 1);
-                      // ctx.fillText((poi.score * 100).toFixed(0), 0, -r * 2);
-                      ctx.fillText(poi.relativePosition.map(v => Math.round(v * 100)).join(), 0, -r * 2);
+                      const text = [
+                        poi.screenPosition[2],
+                        poi.relativePosition[2],
+                      ].map(v => Math.round(v * 100)).join();
+                      ctx.fillText(
+                        text,
+                        0,
+                        -r * 2,
+                      );
+                      ctx.strokeText(text, 0, -r * 2);
+
                       ctx.restore();
                     }
                   }

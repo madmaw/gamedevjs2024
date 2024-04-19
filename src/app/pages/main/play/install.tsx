@@ -122,42 +122,45 @@ function installPlay({ Debug }: { Debug: Play | undefined }) {
               const dx = (width / 2 - nosePosition[0]) / minDimension;
               const dy = (height / 2 - nosePosition[1]) / minDimension;
               player.headOffset = new Vector3(dx, dy + PLAYER_HEIGHT, 0);
+
+              const windowWidth = window.innerWidth;
+              const windowHeight = window.innerHeight;
+              const windowAspectRatio = windowWidth / windowHeight;
+              const scanAspectRatio = width / height;
+
+              ([
+                [
+                  CorticalID.RightWrist,
+                  HandKind.Right,
+                ],
+                [
+                  CorticalID.LeftWrist,
+                  HandKind.Left,
+                ],
+              ] as const).forEach(
+                function ([
+                  id,
+                  kind,
+                ]) {
+                  const wrist = poses[0].keypoints[id];
+                  if (wrist != null) {
+                    const wristScreenPosition = wrist.screenPosition;
+                    const dx = (wristScreenPosition[0] - width / 2) * 2 / width;
+                    // base bottom of screen at 0
+                    const dy = (wristScreenPosition[1] - height) / height;
+                    const y = dy * PLAYABLE_HEIGHT;
+                    const x = dx * PLAYABLE_HEIGHT * scanAspectRatio;
+                    player.hands[kind].position = player.position.clone().sub(new Vector3(
+                      x,
+                      y,
+                      // unfortunately the z coordinate is not accurate enough to use while seated
+                      //  - (wrist.relativePosition[2] + .4) * 10
+                      computeCameraDistance(windowAspectRatio),
+                    ));
+                  }
+                },
+              );
             }
-
-            const windowWidth = window.innerWidth;
-            const windowHeight = window.innerHeight;
-            const windowAspectRatio = windowWidth / windowHeight;
-            const scanAspectRatio = width / height;
-
-            ([
-              [
-                CorticalID.RightWrist,
-                HandKind.Right,
-              ],
-              [
-                CorticalID.LeftWrist,
-                HandKind.Left,
-              ],
-            ] as const).forEach(
-              function ([
-                id,
-                kind,
-              ]) {
-                const wristPosition = poses[0].keypoints[id]?.screenPosition;
-                if (wristPosition != null) {
-                  const dx = (wristPosition[0] - width / 2) * 2 / width;
-                  // base bottom of screen at 0
-                  const dy = (wristPosition[1] - height) / height;
-                  const y = dy * PLAYABLE_HEIGHT;
-                  const x = dx * PLAYABLE_HEIGHT * scanAspectRatio;
-                  player.hands[kind].position = player.position.clone().sub(new Vector3(
-                    x,
-                    y,
-                    computeCameraDistance(windowAspectRatio),
-                  ));
-                }
-              },
-            );
 
             scene.scanSize = size;
             applyHandsKeypoints(player);
@@ -194,7 +197,7 @@ function installPlay({ Debug }: { Debug: Play | undefined }) {
     return Debug && (
       <Aligner
         xAlignment={Alignment.End}
-        yAlignment={Alignment.End}
+        yAlignment={Alignment.Start}
       >
         <Debug
           corticalStream={corticalStream}

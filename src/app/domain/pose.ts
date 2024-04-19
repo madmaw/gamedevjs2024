@@ -1,6 +1,6 @@
 export type Keypoint = {
   readonly relativePosition: readonly [number, number, number],
-  readonly screenPosition: readonly [number, number],
+  readonly screenPosition: readonly [number, number, number],
   readonly score: number,
 };
 

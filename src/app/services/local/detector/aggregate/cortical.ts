@@ -5,6 +5,7 @@ import {
   CorticalKind,
   type CorticalPose,
   type CorticalScan,
+  HandID,
   type HandScan,
   type Keypoint,
 } from 'app/domain/pose';
@@ -42,20 +43,23 @@ function aggregate(bodyScan: BodyScan, handScan: HandScan): CorticalScan {
             id,
             handKeypoint,
           ] of Object.entries(handKeypoints)) {
-            // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-            const corticalID = `${kind}_${id}` as CorticalID;
-            // match the wrists up with the 3D keypoints
-            // TODO line up 2D body and hand keypoints to verify that the wrist is the same
-            // TODO scale 3D hand keypoints to match body (somehow - maybe use the length of the forearm and width of the hand or something)
-            const scale = 1;
-            const adjustedHandKeypoint: Keypoint = {
-              ...handKeypoint,
+            // ignore the wrist itself since the original read is likely better
+            if (id !== HandID.Wrist) {
               // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-              relativePosition: handKeypoint.relativePosition.map((v, i) => {
-                return bodyWrist.relativePosition[i] + (v - handWrist.relativePosition[i]) * scale;
-              }) as [number, number, number],
-            };
-            keypoints[corticalID] = adjustedHandKeypoint;
+              const corticalID = `${kind}_${id}` as CorticalID;
+              // match the wrists up with the 3D keypoints
+              // TODO line up 2D body and hand keypoints to verify that the wrist is the same
+              // TODO scale 3D hand keypoints to match body (somehow - maybe use the length of the forearm and width of the hand or something)
+              const scale = 1;
+              const adjustedHandKeypoint: Keypoint = {
+                ...handKeypoint,
+                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+                relativePosition: handKeypoint.relativePosition.map((v, i) => {
+                  return bodyWrist.relativePosition[i] + (v - handWrist.relativePosition[i]) * scale;
+                }) as [number, number, number],
+              };
+              keypoints[corticalID] = adjustedHandKeypoint;
+            }
           }
         }
         return keypoints;

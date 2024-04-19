@@ -36,6 +36,7 @@ function SuperBall({ radius }: { radius: number }) {
       restitution={1}
       colliders={'ball'}
       mass={1}
+      friction={1}
       collisionGroups={SCENERY_INTERACTION_GROUP}
     >
       <mesh
@@ -62,6 +63,7 @@ function BouncyCube() {
         .2,
         0,
       ]}
+      friction={1}
       collisionGroups={SCENERY_INTERACTION_GROUP}
     >
       <mesh
@@ -79,6 +81,35 @@ function BouncyCube() {
   );
 }
 
+function Stick() {
+  return (
+    <RigidBody
+      restitution={1}
+      position={[
+        -1,
+        .5,
+        0,
+      ]}
+      friction={1}
+      collisionGroups={SCENERY_INTERACTION_GROUP}
+    >
+      <mesh
+        castShadow={true}
+        receiveShadow={true}
+      >
+        <cylinderGeometry args={[
+          .1,
+          .1,
+          1,
+          6,
+          6,
+        ]} />
+        <meshStandardMaterial color='brown' />
+      </mesh>
+    </RigidBody>
+  );
+}
+
 function Ground() {
   return (
     <RigidBody
@@ -87,6 +118,7 @@ function Ground() {
         0,
         0,
       ]}
+      friction={1}
       restitution={0}
       type='fixed'
       collisionGroups={TERRAIN_INTERACTION_GROUP}
@@ -160,6 +192,7 @@ export function install() {
           <Physics>
             <SuperBall radius={.3} />
             <BouncyCube />
+            <Stick />
             <Ground />
             {scene.entities.map(function (entity) {
               const Renderer = rendererRegistry.getRenderer(entity);
