@@ -22,9 +22,11 @@ import Color from 'colorjs.io';
 import { observer } from 'mobx-react';
 import {
   type RefObject,
+  useCallback,
   useRef,
 } from 'react';
 import {
+  type CapsuleGeometry,
   Euler,
   Matrix4,
   Quaternion,
@@ -60,36 +62,29 @@ const HAND_OFFSET: [number, number, number] = [
 
 export const FingerRenderer = observer(function ({
   segment,
-  position,
   parents,
   parentRef,
+  parentPosition,
   parentTranslation,
   parentRotation,
   length,
   radius,
 }: {
   segment: Node<Joint>,
-  position: Vector3,
   parents: readonly Node<Joint>[],
   parentRef: RefObject<RapierRigidBody>,
+  parentPosition: Vector3,
   parentTranslation: Vector3,
   parentRotation: Quaternion,
   length: number,
   radius: number,
 }) {
-  // TODO just have a sensible starting position and don't do all these calculations
-  // as the physics is updated immediately to represent the actual rotation anyway
   const fingerSegmentRef = useRef<RapierRigidBody>(null);
-  const rotation = parentRotation; // segment.value.rotation.clone().premultiply(parentRotation);
-  const fullRotation = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI / 2).premultiply(rotation);
-  const bodyPosition = new Vector3(
-    length / 2,
-    0,
-    0,
-  ).applyQuaternion(rotation).add(position);
-  // TODO avoid expensive calculations
-  const bodyPositionRef = useRef(bodyPosition);
-  const fullRotationRef = useRef(fullRotation);
+  const position = new Vector3(length / 2, 0, 0)
+    .add(parentTranslation)
+    .applyQuaternion(parentRotation).add(parentPosition);
+  const positionRef = useRef(position);
+  const rotationRef = useRef(parentRotation);
 
   useBeforePhysicsStep(function (world: World) {
     if (fingerSegmentRef.current) {
@@ -98,8 +93,8 @@ export const FingerRenderer = observer(function ({
         function (acc, parent) {
           return acc.premultiply(parent.value.rotation);
         },
-        new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), -Math.PI / 2)
-          .premultiply(new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), Math.PI / 2))
+        // not sure why this rotation is necessary
+        new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), Math.PI / 2)
           .premultiply(segment.value.rotation),
       );
       const deltaRotation = new Quaternion(
@@ -118,21 +113,33 @@ export const FingerRenderer = observer(function ({
     }
   });
 
+  // unfortunately initial positions are set on the unadjusted capsule geometry
   const joint = useSphericalJoint(parentRef, fingerSegmentRef, [
     parentTranslation.toArray(),
     [
-      0,
       -length / 2,
+      0,
       0,
     ],
   ]);
+
+  const adjustGeometry = useCallback(function (geometry: CapsuleGeometry | null) {
+    if (geometry != null) {
+      const transform = new Matrix4()
+        // offset
+        .makeTranslation(length / 2, 0, 0)
+        // rotate capsule so it is horizontal (default is vertical)
+        .multiply(new Matrix4().makeRotationFromEuler(new Euler(0, 0, Math.PI / 2)));
+      geometry.applyMatrix4(transform);
+    }
+  }, [length]);
 
   return (
     <>
       <RigidBody
         ref={fingerSegmentRef}
-        quaternion={fullRotationRef.current}
-        position={bodyPositionRef.current}
+        quaternion={rotationRef.current}
+        position={positionRef.current}
         collisionGroups={PLAYER_INTERACTION_GROUP}
         gravityScale={0}
         restitution={0}
@@ -141,8 +148,11 @@ export const FingerRenderer = observer(function ({
         // lockRotations={true}
         // lockTranslations={true}
       >
-        <mesh castShadow={true}>
+        <mesh
+          castShadow={true}
+        >
           <capsuleGeometry
+            ref={adjustGeometry}
             args={[
               radius,
               length,
@@ -160,14 +170,14 @@ export const FingerRenderer = observer(function ({
             <FingerRenderer
               key={connection.value.id}
               segment={connection}
-              position={new Vector3(length, 0, 0).applyQuaternion(rotation).add(bodyPosition)}
               parents={[
                 segment,
                 ...parents,
               ]}
               parentRef={fingerSegmentRef}
-              parentTranslation={new Vector3(0, length, 0)}
-              parentRotation={rotation}
+              parentPosition={position}
+              parentTranslation={new Vector3(length, 0, 0)}
+              parentRotation={parentRotation}
               length={length * .9}
               radius={radius * .9}
             />
@@ -187,25 +197,25 @@ const HAND_FINGER_OFFSETS: [Vector3, number, number][] = [
   ],
   // index
   [
-    new Vector3(HAND_LENGTH, HAND_WIDTH / 2 - BASE_FINGER_RADIUS, 0),
+    new Vector3(HAND_LENGTH - BASE_FINGER_RADIUS, HAND_WIDTH / 2 - BASE_FINGER_RADIUS, 0),
     BASE_FINGER_LENGTH * 1.5,
     BASE_FINGER_RADIUS,
   ],
   // middle
   [
-    new Vector3(HAND_LENGTH, HAND_WIDTH / 2 - BASE_FINGER_RADIUS - FINGER_GAP, 0),
+    new Vector3(HAND_LENGTH - BASE_FINGER_RADIUS, HAND_WIDTH / 2 - BASE_FINGER_RADIUS - FINGER_GAP, 0),
     BASE_FINGER_LENGTH * 1.8,
     BASE_FINGER_RADIUS,
   ],
   // ring
   [
-    new Vector3(HAND_LENGTH, BASE_FINGER_RADIUS + FINGER_GAP - HAND_WIDTH / 2, 0),
+    new Vector3(HAND_LENGTH - BASE_FINGER_RADIUS, BASE_FINGER_RADIUS + FINGER_GAP - HAND_WIDTH / 2, 0),
     BASE_FINGER_LENGTH * 1.5,
     BASE_FINGER_RADIUS,
   ],
   // pinky
   [
-    new Vector3(HAND_LENGTH, BASE_FINGER_RADIUS * .9 - HAND_WIDTH / 2, 0),
+    new Vector3(HAND_LENGTH - BASE_FINGER_RADIUS * .9, BASE_FINGER_RADIUS * .9 - HAND_WIDTH / 2, 0),
     BASE_FINGER_LENGTH,
     BASE_FINGER_RADIUS * .9,
   ],
@@ -245,7 +255,6 @@ export const HandRenderer = observer(function ({
     }
   });
 
-  const rotation = hand.wrist.value.rotation;
   return (
     <>
       <RigidBody
@@ -289,11 +298,11 @@ export const HandRenderer = observer(function ({
             <FingerRenderer
               key={connection.value.id}
               segment={connection}
-              position={hand.position.clone().add(parentTranslation.clone().applyQuaternion(rotation))}
+              parentPosition={initialPosition.current}
               parents={[hand.wrist]}
               parentRef={palmRef}
               parentTranslation={parentTranslation}
-              parentRotation={rotation}
+              parentRotation={initialRotation.current}
               length={length}
               radius={radius}
             />
