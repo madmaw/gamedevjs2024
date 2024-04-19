@@ -45,8 +45,8 @@ const KeypointCanvas = styled.canvas`
 const POIs: Partial<Record<CorticalID, Color>> = {
   [CorticalID.RightWrist]: new Color('red'),
   // [CorticalID.RightElbow]: new Color('white'),
-  // [CorticalID.RightIndexFingerTip]: new Color('yellow'),
-  // [CorticalID.RightThumbTip]: new Color('orange'),
+  [CorticalID.RightIndexFingerTip]: new Color('yellow'),
+  [CorticalID.RightThumbTip]: new Color('orange'),
   // [CorticalID.LeftElbow]: new Color('white'),
   [CorticalID.LeftWrist]: new Color('yellow'),
   [CorticalID.Nose]: new Color('magenta'),
@@ -154,10 +154,11 @@ export function install() {
                       ctx.save();
                       ctx.translate(poi.screenPosition[0], poi.screenPosition[1]);
                       ctx.scale(-1, 1);
-                      const text = [
-                        poi.screenPosition[2],
-                        poi.relativePosition[2],
-                      ].map(v => Math.round(v * 100)).join();
+                      // const text = [
+                      //   poi.screenPosition[2],
+                      //   poi.relativePosition[2],
+                      // ].map(v => Math.round(v * 100)).join();
+                      const text = Math.round(poi.score * 100).toString();
                       ctx.fillText(
                         text,
                         0,

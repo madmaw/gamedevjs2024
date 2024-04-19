@@ -17,9 +17,9 @@ export abstract class TFJSBaseDetector<T> implements Detector<T> {
   constructor(
     private readonly loggingService: LoggingService,
     // gap between pose detections to allow other processing (default allow for one render at 60fps)
-    private readonly minPoseDetectionIntervalMillis = 1000 / 60,
+    private readonly minPoseDetectionIntervalMillis = 1000 / 120,
     // target pose detection frequency (default 30 reads per second)
-    private readonly targetPoseDetectionFrequencyMillis = 1000 / 20,
+    private readonly targetPoseDetectionFrequencyMillis = 1000 / 30,
   ) {
   }
 

@@ -60,7 +60,7 @@ const HAND_OFFSET: [number, number, number] = [
   0,
 ];
 
-export const FingerRenderer = observer(function ({
+export const FingerRenderer = function ({
   segment,
   parents,
   parentRef,
@@ -89,26 +89,31 @@ export const FingerRenderer = observer(function ({
   useBeforePhysicsStep(function (world: World) {
     if (fingerSegmentRef.current) {
       const currentRotation = fingerSegmentRef.current.rotation();
-      const targetRotation = parents.reduce(
-        function (acc, parent) {
-          return acc.premultiply(parent.value.rotation);
-        },
-        // not sure why this rotation is necessary
-        new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), Math.PI / 2)
-          .premultiply(segment.value.rotation),
-      );
-      const deltaRotation = new Quaternion(
+      const currentQuaternion = new Quaternion(
         currentRotation.x,
         currentRotation.y,
         currentRotation.z,
         currentRotation.w,
-      ).invert().premultiply(targetRotation);
-      const deltaEuler = new Euler().setFromQuaternion(deltaRotation);
-      const deltaVector = new Vector3().setFromEuler(deltaEuler).multiplyScalar(1 / world.timestep);
+      );
+      // const targetRotation = parents.reduce(
+      //   function (acc, parent) {
+      //     return acc.premultiply(parent.value.rotation);
+      //   },
+      //   // not sure why this rotation is necessary
+      //   new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), Math.PI / 2)
+      //     .premultiply(segment.value.rotation),
+      // );
+      const parentRotation = parentRef.current!.rotation();
+      const targetRotation = new Quaternion(parentRotation.x, parentRotation.y, parentRotation.z, parentRotation.w)
+        .multiply(segment.value.rotation);
+      // const deltaRotation = currentQuaternion.clone().invert().premultiply(targetRotation);
+      // const deltaEuler = new Euler().setFromQuaternion(deltaRotation);
+      // const deltaVector = new Vector3().setFromEuler(deltaEuler).multiplyScalar(1 / world.timestep);
 
       // console.log(new Vector3(1, 0, 0).applyQuaternion(targetRotation));
 
       // fingerSegmentRef.current.setAngvel(deltaVector, true);
+      // fingerSegmentRef.current.setRotation(currentQuaternion.slerp(targetRotation, .5), true);
       fingerSegmentRef.current.setRotation(targetRotation, true);
     }
   });
@@ -186,7 +191,7 @@ export const FingerRenderer = observer(function ({
       })}
     </>
   );
-});
+};
 
 const HAND_FINGER_OFFSETS: [Vector3, number, number][] = [
   // thumb
@@ -221,7 +226,7 @@ const HAND_FINGER_OFFSETS: [Vector3, number, number][] = [
   ],
 ];
 
-export const HandRenderer = observer(function ({
+export const HandRenderer = function ({
   hand,
   transform,
 }: {
@@ -238,20 +243,22 @@ export const HandRenderer = observer(function ({
       const targetPosition = hand.position;
       const delta = targetPosition.clone().sub(currentPosition);
       // move to the target position
-      palmRef.current.setLinvel(delta.multiplyScalar(.5 / world.timestep), true);
+      palmRef.current.setLinvel(delta.multiplyScalar(.1 / world.timestep), true);
 
       const currentRotation = palmRef.current.rotation();
-      const targetRotation = hand.wrist.value.rotation;
-      const deltaRotation = new Quaternion(
+      const currentQuaternion = new Quaternion(
         currentRotation.x,
         currentRotation.y,
         currentRotation.z,
         currentRotation.w,
-      ).invert().premultiply(targetRotation);
-      const deltaEuler = new Euler().setFromQuaternion(deltaRotation);
-      const deltaVector = new Vector3().setFromEuler(deltaEuler).multiplyScalar(.5 / world.timestep);
+      );
+      const targetRotation = hand.wrist.value.rotation;
+      // const deltaRotation = currentQuaternion.invert().premultiply(targetRotation);
+      // const deltaEuler = new Euler().setFromQuaternion(deltaRotation);
+      // const deltaVector = new Vector3().setFromEuler(deltaEuler).multiplyScalar(.5 / world.timestep);
 
-      palmRef.current.setAngvel(deltaVector, true);
+      // palmRef.current.setAngvel(deltaVector, true);
+      palmRef.current.setRotation(currentQuaternion.slerp(targetRotation, .5), true);
     }
   });
 
@@ -311,7 +318,7 @@ export const HandRenderer = observer(function ({
       })}
     </>
   );
-});
+};
 
 const LEFT_HAND_TRANSFORM: Matrix4 = new Matrix4().makeScale(1, -1, 1);
 const RIGHT_HAND_TRANSFORM: Matrix4 = new Matrix4().identity();

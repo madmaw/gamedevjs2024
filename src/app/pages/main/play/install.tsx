@@ -93,7 +93,7 @@ function installPlay({ Debug }: { Debug: Play | undefined }) {
             // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
             const corticalId = id as CorticalID;
             const keypoint = keypoints[corticalId];
-            if (keypoint != null && keypoint.score > .6) {
+            if (keypoint != null && keypoint.score > .9) {
               // x is flipped due to mirroring, y is flipped due to using pixel coordinates, and z
               // is flipped it is measuring depth, we keep z as is because the model is detecting us facing
               // outward and we want to detect facing inward (so double flip cancels out)
@@ -212,7 +212,6 @@ type HandData = {
   kind: HandKind,
   jointId: CorticalID,
   crossAxisJointIds: [CorticalID, CorticalID],
-  incomingJointId: CorticalID,
   outgoingJointId: CorticalID,
 };
 
@@ -223,8 +222,7 @@ const RIGHT_HAND_DATA: HandData = {
     CorticalID.RightPinkyFingerMCP,
     CorticalID.RightIndexFingerMCP,
   ],
-  incomingJointId: CorticalID.RightElbow,
-  outgoingJointId: CorticalID.RightMiddleFingerMCP,
+  outgoingJointId: CorticalID.RightRingFingerMCP,
 };
 const LEFT_HAND_DATA: HandData = {
   kind: HandKind.Left,
@@ -233,8 +231,7 @@ const LEFT_HAND_DATA: HandData = {
     CorticalID.LeftIndexFingerMCP,
     CorticalID.LeftPinkyFingerMCP,
   ],
-  incomingJointId: CorticalID.LeftElbow,
-  outgoingJointId: CorticalID.LeftMiddleFingerMCP,
+  outgoingJointId: CorticalID.LeftRingFingerMCP,
 };
 const HANDS = [
   RIGHT_HAND_DATA,
@@ -252,33 +249,27 @@ function applyHandsKeypoints({
       kind,
       jointId,
       crossAxisJointIds,
-      incomingJointId,
       outgoingJointId,
     } = handData;
     const hand = hands[kind];
     const joint = keypoints[jointId];
-    const incomingJoint = keypoints[incomingJointId];
     const outgoingJoint = keypoints[outgoingJointId];
     const crossAxisJoints = crossAxisJointIds.map((jointId) => keypoints[jointId]);
     if (
       joint != null
-      && incomingJoint != null
       && outgoingJoint != null
       && crossAxisJoints.every(exists)
     ) {
       const q = new Quaternion();
-      // account for forearm rotation
-      const forearmDirection = joint.clone().sub(incomingJoint).normalize();
-      // tends to hallucinate elbow position, which is convenient, but the z is never right
-      forearmDirection.z = 0;
-      const forearmAngle = Math.atan2(forearmDirection.y, forearmDirection.x);
 
       const screenNormal = new Vector3(0, 0, 1);
       const handDirection = (outgoingJoint.clone().sub(joint)).normalize();
+      const handScreenDirection = handDirection.clone().projectOnPlane(screenNormal).normalize();
+      const handAngle = Math.atan2(handScreenDirection.y, handScreenDirection.x);
       q.setFromUnitVectors(
-        forearmDirection,
+        handScreenDirection,
         handDirection,
-      ).multiply(new Quaternion().setFromAxisAngle(screenNormal, forearmAngle));
+      ).multiply(new Quaternion().setFromAxisAngle(screenNormal, handAngle));
 
       const inverseQNoSpin = q.clone().invert();
       const unrotatedCrossAxis = crossAxisJoints.map((joint) => joint.clone().applyQuaternion(inverseQNoSpin));
