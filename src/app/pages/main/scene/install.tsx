@@ -60,10 +60,11 @@ function BouncyCube() {
       restitution={1}
       position={[
         2,
-        .2,
+        .5,
         0,
       ]}
       friction={1}
+      type='fixed'
       collisionGroups={SCENERY_INTERACTION_GROUP}
     >
       <mesh
@@ -71,9 +72,9 @@ function BouncyCube() {
         receiveShadow={true}
       >
         <boxGeometry args={[
-          .4,
-          .4,
-          .4,
+          1,
+          1,
+          1,
         ]} />
         <meshStandardMaterial color='green' />
       </mesh>

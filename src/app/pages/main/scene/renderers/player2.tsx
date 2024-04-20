@@ -47,7 +47,6 @@ const HAND_DEPTH = .2;
 const BASE_FINGER_RADIUS = HAND_DEPTH * .5;
 const FINGER_GAP = HAND_DEPTH;
 const BASE_FINGER_LENGTH = .1;
-const HAND_FRICTION = 1;
 
 const HAND_ARGS: [number, number, number] = [
   HAND_LENGTH,
@@ -106,15 +105,15 @@ export const FingerRenderer = function ({
       const parentRotation = parentRef.current!.rotation();
       const targetRotation = new Quaternion(parentRotation.x, parentRotation.y, parentRotation.z, parentRotation.w)
         .multiply(segment.value.rotation);
-      // const deltaRotation = currentQuaternion.clone().invert().premultiply(targetRotation);
-      // const deltaEuler = new Euler().setFromQuaternion(deltaRotation);
-      // const deltaVector = new Vector3().setFromEuler(deltaEuler).multiplyScalar(1 / world.timestep);
+      const deltaRotation = currentQuaternion.clone().invert().premultiply(targetRotation);
+      const deltaEuler = new Euler().setFromQuaternion(deltaRotation);
+      const deltaVector = new Vector3().setFromEuler(deltaEuler).multiplyScalar(1 / world.timestep);
 
       // console.log(new Vector3(1, 0, 0).applyQuaternion(targetRotation));
 
-      // fingerSegmentRef.current.setAngvel(deltaVector, true);
+      fingerSegmentRef.current.setAngvel(deltaVector, true);
       // fingerSegmentRef.current.setRotation(currentQuaternion.slerp(targetRotation, .5), true);
-      fingerSegmentRef.current.setRotation(targetRotation, true);
+      // fingerSegmentRef.current.setRotation(targetRotation, true);
     }
   });
 
@@ -148,8 +147,13 @@ export const FingerRenderer = function ({
         collisionGroups={PLAYER_INTERACTION_GROUP}
         gravityScale={0}
         restitution={0}
-        mass={1}
-        friction={HAND_FRICTION}
+        friction={.5}
+        // massProperties={{
+        //   mass: 1,
+        //   centerOfMass: new Vector3(0, 0, 0),
+        //   principalAngularInertia: new Vector3(1, 1, 1),
+        //   angularInertiaLocalFrame: new Quaternion(),
+        // }}
         // lockRotations={true}
         // lockTranslations={true}
       >
@@ -243,7 +247,7 @@ export const HandRenderer = function ({
       const targetPosition = hand.position;
       const delta = targetPosition.clone().sub(currentPosition);
       // move to the target position
-      palmRef.current.setLinvel(delta.multiplyScalar(.1 / world.timestep), true);
+      // palmRef.current.setLinvel(delta.multiplyScalar(.1 / world.timestep), true);
 
       const currentRotation = palmRef.current.rotation();
       const currentQuaternion = new Quaternion(
@@ -253,12 +257,12 @@ export const HandRenderer = function ({
         currentRotation.w,
       );
       const targetRotation = hand.wrist.value.rotation;
-      // const deltaRotation = currentQuaternion.invert().premultiply(targetRotation);
-      // const deltaEuler = new Euler().setFromQuaternion(deltaRotation);
-      // const deltaVector = new Vector3().setFromEuler(deltaEuler).multiplyScalar(.5 / world.timestep);
+      const deltaRotation = currentQuaternion.invert().premultiply(targetRotation);
+      const deltaEuler = new Euler().setFromQuaternion(deltaRotation);
+      const deltaVector = new Vector3().setFromEuler(deltaEuler).multiplyScalar(.5 / world.timestep);
 
       // palmRef.current.setAngvel(deltaVector, true);
-      palmRef.current.setRotation(currentQuaternion.slerp(targetRotation, .5), true);
+      // palmRef.current.setRotation(currentQuaternion.slerp(targetRotation, .5), true);
     }
   });
 
@@ -268,11 +272,11 @@ export const HandRenderer = function ({
         ref={palmRef}
         quaternion={initialRotation.current}
         position={initialPosition.current}
-        gravityScale={0}
+        // gravityScale={0}
         restitution={0}
-        mass={1000}
+        mass={1}
         collisionGroups={PLAYER_INTERACTION_GROUP}
-        friction={HAND_FRICTION}
+        friction={.1}
         // lockRotations={true}
         // lockTranslations={true}
       >
