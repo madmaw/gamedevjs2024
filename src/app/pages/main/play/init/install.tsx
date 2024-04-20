@@ -33,7 +33,7 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { CustomAsync } from 'ui/components/async/custom';
 import fpsHandsUrl from './assets/fps-hands.fbx';
 // import cartoonHandsUrl from './assets/cartoon-hands.fbx';
-import { PlayerEntityRenderer2 } from 'app/pages/main/scene/renderers/player2';
+import { PlayerEntityRenderer3 } from 'app/pages/main/scene/renderers/player3';
 import { PlayFailure } from './failure';
 import { PlayLoading } from './loading';
 
@@ -124,7 +124,7 @@ export function install({
           baseScale: scale,
           debug,
         });
-        const EntityRenderer2 = createPartialComponent(PlayerEntityRenderer2, {
+        const EntityRenderer2 = createPartialComponent(PlayerEntityRenderer3, {
           debug,
         });
         rendererRegistry.registerRendererForEntityType(entityType, EntityRenderer2, 1);

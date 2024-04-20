@@ -218,6 +218,7 @@ type HandData = {
   jointId: CorticalID,
   crossAxisJointIds: [CorticalID, CorticalID],
   outgoingJointId: CorticalID,
+  scalar: Vector3,
 };
 
 const RIGHT_HAND_DATA: HandData = {
@@ -228,6 +229,7 @@ const RIGHT_HAND_DATA: HandData = {
     CorticalID.RightIndexFingerMCP,
   ],
   outgoingJointId: CorticalID.RightRingFingerMCP,
+  scalar: new Vector3(1, 1, 1),
 };
 const LEFT_HAND_DATA: HandData = {
   kind: HandKind.Left,
@@ -237,6 +239,7 @@ const LEFT_HAND_DATA: HandData = {
     CorticalID.LeftPinkyFingerMCP,
   ],
   outgoingJointId: CorticalID.LeftRingFingerMCP,
+  scalar: new Vector3(1, 1, -1),
 };
 const HANDS = [
   RIGHT_HAND_DATA,
@@ -254,11 +257,14 @@ function applyHandsKeypoints({
       jointId,
       crossAxisJointIds,
       outgoingJointId,
+      scalar,
     } = handData;
     const hand = hands[kind];
-    const joint = keypoints[jointId];
-    const outgoingJoint = keypoints[outgoingJointId];
-    const crossAxisJoints = crossAxisJointIds.map((jointId) => keypoints[jointId]);
+    const joint = keypoints[jointId]?.clone().multiply(scalar);
+    const outgoingJoint = keypoints[outgoingJointId]?.clone().multiply(scalar);
+    const crossAxisJoints = crossAxisJointIds.map((jointId) => {
+      return keypoints[jointId]?.clone().multiply(scalar);
+    });
     if (
       joint != null
       && outgoingJoint != null
@@ -292,6 +298,7 @@ function applyHandsKeypoints({
           connection,
           handDirection,
           inverseQ,
+          scalar,
         );
       });
       // calculate hand position based on the dimensions of the viewing area and the dimensions of the
@@ -310,6 +317,7 @@ function applyFingerKeypoints(
   currentJoint: Node<Joint>,
   previousDirection: Vector3,
   unrotate: Quaternion,
+  scalar: Vector3,
 ) {
   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   const jointCorticalId = `${kind}_${currentJoint.value.id}` as CorticalID;
@@ -320,9 +328,9 @@ function applyFingerKeypoints(
   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   const nextJointCorticalId = `${kind}_${nextJoint.value.id}` as CorticalID;
 
-  const jointPoint = keypoints[jointCorticalId];
+  const jointPoint = keypoints[jointCorticalId]?.clone().multiply(scalar);
 
-  const nextJointPoint = keypoints[nextJointCorticalId];
+  const nextJointPoint = keypoints[nextJointCorticalId]?.clone().multiply(scalar);
   if (jointPoint != null && nextJointPoint != null) {
     const segmentDirection = nextJointPoint.clone().sub(jointPoint).normalize();
     const rotationAxis = previousDirection.clone().cross(segmentDirection).normalize().applyQuaternion(unrotate);
@@ -331,9 +339,7 @@ function applyFingerKeypoints(
     // console.log('normal', previousDirection, 'dir', segmentDirection, 'axis', rotationAxis, rotationAngle);
 
     const q = new Quaternion().setFromAxisAngle(rotationAxis, rotationAngle);
-    runInAction(function () {
-      currentJoint.value.rotation = q;
-    });
+    currentJoint.value.rotation = q;
 
     if (nextJoint != null) {
       applyFingerKeypoints(
@@ -342,6 +348,7 @@ function applyFingerKeypoints(
         nextJoint,
         segmentDirection,
         unrotate.clone().premultiply(q.clone().invert()),
+        scalar,
       );
     }
   }
