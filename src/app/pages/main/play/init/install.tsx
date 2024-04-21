@@ -7,7 +7,6 @@ import {
   type PlayProps,
 } from 'app/pages/main/play/types';
 import { type EntityRendererRegistry } from 'app/pages/main/scene/renderer';
-import { PlayerEntityRenderer } from 'app/pages/main/scene/renderers/player';
 import {
   type CorticalDetectorService,
   PoseSourceType,
@@ -119,15 +118,10 @@ export function install({
         object.position.add(offset);
         offsetObject.add(object);
 
-        const EntityRenderer = createPartialComponent(PlayerEntityRenderer, {
-          object: offsetObject,
-          baseScale: scale,
+        const EntityRenderer = createPartialComponent(PlayerEntityRenderer3, {
           debug,
         });
-        const EntityRenderer2 = createPartialComponent(PlayerEntityRenderer3, {
-          debug,
-        });
-        rendererRegistry.registerRendererForEntityType(entityType, EntityRenderer2, 1);
+        rendererRegistry.registerRendererForEntityType(entityType, EntityRenderer, 1);
         return offsetObject;
       }));
     }, [

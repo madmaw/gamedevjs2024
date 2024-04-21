@@ -247,7 +247,7 @@ export const HandRenderer = function ({
       const targetPosition = hand.position;
       const delta = targetPosition.clone().sub(currentPosition);
       // move to the target position
-      // palmRef.current.setLinvel(delta.multiplyScalar(.1 / world.timestep), true);
+      palmRef.current.setLinvel(delta.multiplyScalar(.1 / world.timestep), true);
 
       const currentRotation = palmRef.current.rotation();
       const currentQuaternion = new Quaternion(
@@ -256,12 +256,12 @@ export const HandRenderer = function ({
         currentRotation.z,
         currentRotation.w,
       );
-      const targetRotation = hand.wrist.value.rotation;
+      const targetRotation = hand.wrist.value.rotation.clone();
       const deltaRotation = currentQuaternion.invert().premultiply(targetRotation);
       const deltaEuler = new Euler().setFromQuaternion(deltaRotation);
       const deltaVector = new Vector3().setFromEuler(deltaEuler).multiplyScalar(.5 / world.timestep);
 
-      // palmRef.current.setAngvel(deltaVector, true);
+      palmRef.current.setAngvel(deltaVector, true);
       // palmRef.current.setRotation(currentQuaternion.slerp(targetRotation, .5), true);
     }
   });

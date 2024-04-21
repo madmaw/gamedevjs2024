@@ -7,7 +7,6 @@ import {
   type RapierRigidBody,
   RigidBody,
   useBeforePhysicsStep,
-  useRevoluteJoint,
   useSphericalJoint,
 } from '@react-three/rapier';
 import {
@@ -56,13 +55,13 @@ const BASE_FINGER_LENGTH = .1;
 const FINGER_LIGHTENING = .03;
 
 const HAND_ARGS: [number, number, number] = [
-  HAND_LENGTH,
   HAND_WIDTH,
+  HAND_LENGTH,
   HAND_DEPTH,
 ];
 const HAND_OFFSET: [number, number, number] = [
-  HAND_LENGTH / 2,
   0,
+  HAND_LENGTH / 2,
   0,
 ];
 
@@ -88,7 +87,7 @@ export const FingerRenderer = function ({
   color: Color,
 }) {
   const fingerSegmentRef = useRef<RapierRigidBody>(null);
-  const position = new Vector3(length / 2, 0, 0)
+  const position = new Vector3(0, length / 2, 0)
     .applyMatrix4(transform)
     .add(parentTranslation)
     .add(parentPosition);
@@ -111,7 +110,12 @@ export const FingerRenderer = function ({
       //   new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), Math.PI / 2)
       //     .premultiply(segment.value.rotation),
       // );
-      const segmentRotation = segment.value.rotation;
+      // rotation is calculated on the x axis, but our hand is pointing upward so we need to correct
+      const segmentRotation = segment.value.rotation.clone().premultiply(
+        new Quaternion().setFromEuler(new Euler(0, 0, Math.PI / 2)),
+      ).multiply(
+        new Quaternion().setFromEuler(new Euler(0, 0, -Math.PI / 2)),
+      );
 
       const parentRotation = parentRef.current!.rotation();
       const targetRotation = new Quaternion(parentRotation.x, parentRotation.y, parentRotation.z, parentRotation.w)
@@ -128,19 +132,17 @@ export const FingerRenderer = function ({
     }
   });
 
-  // unfortunately initial positions are set on the unadjusted capsule geometry
+  // unfortunately joint positions are set on the unadjusted capsule geometry
   const joint = useSphericalJoint(parentRef, fingerSegmentRef, [
     parentTranslation.toArray(),
-    new Vector3(-length / 2, 0, 0).applyMatrix4(transform).toArray(),
+    new Vector3(0, -length / 2, 0).applyMatrix4(transform).toArray(),
   ]);
 
   const adjustGeometry = useCallback(function (geometry: CapsuleGeometry | null) {
     if (geometry != null) {
       const t = new Matrix4()
         // offset
-        .makeTranslation(length / 2, 0, 0)
-        // rotate capsule so it is horizontal (default is vertical)
-        .multiply(new Matrix4().makeRotationFromEuler(new Euler(0, 0, Math.PI / 2)))
+        .makeTranslation(0, length / 2, 0)
         .premultiply(transform);
       geometry.applyMatrix4(t);
     }
@@ -198,7 +200,7 @@ export const FingerRenderer = function ({
               ]}
               parentRef={fingerSegmentRef}
               parentPosition={position}
-              parentTranslation={new Vector3(length, 0, 0).applyMatrix4(transform)}
+              parentTranslation={new Vector3(0, length, 0).applyMatrix4(transform)}
               length={length * .9}
               radius={radius * .9}
               color={new Color(color.darken(FINGER_LIGHTENING))}
@@ -213,31 +215,31 @@ export const FingerRenderer = function ({
 const HAND_FINGER_OFFSETS: [Vector3, number, number][] = [
   // thumb
   [
-    new Vector3(HAND_LENGTH * .3, HAND_WIDTH / 2 - BASE_FINGER_RADIUS, -HAND_DEPTH / 2),
+    new Vector3(HAND_WIDTH / 3, HAND_LENGTH * .3, -HAND_DEPTH / 2),
     BASE_FINGER_LENGTH * 1.2,
     BASE_FINGER_RADIUS * 1.1,
   ],
   // index
   [
-    new Vector3(HAND_LENGTH - BASE_FINGER_RADIUS, HAND_WIDTH / 2 - BASE_FINGER_RADIUS, 0),
+    new Vector3(HAND_WIDTH / 2 - BASE_FINGER_RADIUS, HAND_LENGTH - BASE_FINGER_RADIUS, 0),
     BASE_FINGER_LENGTH * 1.5,
     BASE_FINGER_RADIUS,
   ],
   // middle
   [
-    new Vector3(HAND_LENGTH - BASE_FINGER_RADIUS, HAND_WIDTH / 2 - BASE_FINGER_RADIUS - FINGER_GAP, 0),
+    new Vector3(HAND_WIDTH / 2 - BASE_FINGER_RADIUS - FINGER_GAP, HAND_LENGTH - BASE_FINGER_RADIUS, 0),
     BASE_FINGER_LENGTH * 1.5,
     BASE_FINGER_RADIUS,
   ],
   // ring
   [
-    new Vector3(HAND_LENGTH - BASE_FINGER_RADIUS, BASE_FINGER_RADIUS + FINGER_GAP - HAND_WIDTH / 2, 0),
+    new Vector3(BASE_FINGER_RADIUS + FINGER_GAP - HAND_WIDTH / 2, HAND_LENGTH - BASE_FINGER_RADIUS, 0),
     BASE_FINGER_LENGTH * 1.5,
     BASE_FINGER_RADIUS,
   ],
   // pinky
   [
-    new Vector3(HAND_LENGTH - BASE_FINGER_RADIUS * .9, BASE_FINGER_RADIUS * .9 - HAND_WIDTH / 2, 0),
+    new Vector3(BASE_FINGER_RADIUS * .9 - HAND_WIDTH / 2, HAND_LENGTH - BASE_FINGER_RADIUS * .9, 0),
     BASE_FINGER_LENGTH * 1.5,
     BASE_FINGER_RADIUS * .9,
   ],
@@ -262,37 +264,12 @@ export const HandRenderer = forwardRef<RigidBodyType, HandProps>(function ({
   const ref = useMergedRefs(forwardRef, palmRef);
   const initialPosition = useRef(position);
 
-  useBeforePhysicsStep(function (world: World) {
-    if (palmRef.current) {
-      const currentPosition = palmRef.current.translation();
-      const targetPosition = hand.position;
-      const delta = targetPosition.clone().sub(currentPosition);
-      // move to the target position
-      // palmRef.current.setLinvel(delta.multiplyScalar(.1 / world.timestep), true);
-
-      const currentRotation = palmRef.current.rotation();
-      const currentQuaternion = new Quaternion(
-        currentRotation.x,
-        currentRotation.y,
-        currentRotation.z,
-        currentRotation.w,
-      );
-      const targetRotation = hand.wrist.value.rotation;
-      const deltaRotation = currentQuaternion.invert().premultiply(targetRotation);
-      const deltaEuler = new Euler().setFromQuaternion(deltaRotation);
-      const deltaVector = new Vector3().setFromEuler(deltaEuler).multiplyScalar(.5 / world.timestep);
-
-      // palmRef.current.setAngvel(deltaVector, true);
-      // palmRef.current.setRotation(currentQuaternion.slerp(targetRotation, .5), true);
-    }
-  });
-
   return (
     <>
       <RigidBody
         ref={ref}
         position={initialPosition.current}
-        // gravityScale={0}
+        gravityScale={0}
         restitution={0}
         mass={1}
         collisionGroups={PLAYER_INTERACTION_GROUP}
@@ -336,7 +313,7 @@ export const HandRenderer = forwardRef<RigidBodyType, HandProps>(function ({
               parentTranslation={parentTranslation}
               length={length}
               radius={radius}
-              color={color}
+              color={new Color('red')}
             />
           );
         }
@@ -345,12 +322,11 @@ export const HandRenderer = forwardRef<RigidBodyType, HandProps>(function ({
   );
 });
 
-const LEFT_HAND_TRANSFORM: Matrix4 = new Matrix4()
-  .scale(new Vector3(-1, 1, 1));
+const LEFT_HAND_TRANSFORM: Matrix4 = new Matrix4().identity();
 // const LEFT_HAND_TRANSFORM: Matrix4 = new Matrix4().scale(new Vector3(1, -1, 1));
 
 // .copy(new Matrix4().identity());
-const RIGHT_HAND_TRANSFORM: Matrix4 = new Matrix4().identity();
+const RIGHT_HAND_TRANSFORM: Matrix4 = new Matrix4().scale(new Vector3(-1, 1, 1));
 
 export const PlayerEntityRenderer3 = observer(function ({
   entity,
@@ -364,30 +340,91 @@ export const PlayerEntityRenderer3 = observer(function ({
   const rightHand = entity.hands[HandKind.Right];
   const leftHand = entity.hands[HandKind.Left];
 
-  const joint = useRevoluteJoint(rightHandRef, leftHandRef, [
-    [
-      0,
-      0,
-      0,
-    ],
-    [
-      0,
-      0,
-      0,
-    ],
-    [
-      1,
-      0,
-      0,
-    ],
-  ]);
+  useBeforePhysicsStep(function (world: World) {
+    if (leftHandRef.current && rightHandRef.current) {
+      // get the relative rotation of the two hands
+      // right - left
+      const desiredDelta = leftHand.wrist.value.rotation.clone()
+        .invert().premultiply(rightHand.wrist.value.rotation);
+
+      const rightHandRotation = rightHandRef.current.rotation();
+      const leftHandRotation = leftHandRef.current.rotation();
+      const rightHandQuaternion = new Quaternion(
+        rightHandRotation.x,
+        rightHandRotation.y,
+        rightHandRotation.z,
+        rightHandRotation.w,
+      );
+      const leftHandQuaternion = new Quaternion(
+        leftHandRotation.x,
+        leftHandRotation.y,
+        leftHandRotation.z,
+        leftHandRotation.w,
+      );
+      // right - left
+      const currentDelta = leftHandQuaternion.clone().invert().premultiply(rightHandQuaternion);
+      const delta = desiredDelta.clone().invert().premultiply(currentDelta);
+      const eulerDelta = new Euler().setFromQuaternion(delta);
+      const angularVelocity = new Vector3().setFromEuler(eulerDelta).multiplyScalar(.5 / world.timestep);
+
+      // set the rotational velocity of the hands to achieve the desired rotation
+      // rightHandRef.current.setAngvel(angularVelocity, true);
+      // leftHandRef.current.setAngvel(vectorDelta.clone().multiplyScalar(-1), true);
+
+      // rightHandRef.current.setRotation(rightHandQuaternion, true);
+      // rightHandRef.current.setAngvel(new Vector3(), true);
+      // leftHandRef.current.setRotation(rightHandQuaternion.clone().multiply(currentDelta), true);
+      // leftHandRef.current.setAngvel(new Vector3(), true);
+      // rightHandRef.current.setRotation(
+      //   rightHand.wrist.value.rotation,
+      //   true,
+      // );
+      // rightHandRef.current.setAngvel(new Vector3(), true);
+
+      // leftHandRef.current.setRotation(
+      //   leftHand.wrist.value.rotation.clone().multiply(new Quaternion().setFromEuler(new Euler(0, 0, -Math.PI / 2))),
+      //   true,
+      // );
+      // leftHandRef.current.setAngvel(new Vector3(), true);
+
+      const leftHandDelta = leftHandQuaternion.clone().invert().premultiply(
+        leftHand.wrist.value.rotation.clone().multiply(
+          new Quaternion().setFromEuler(new Euler(0, 0, -Math.PI / 2)),
+        ),
+      );
+      leftHandRef.current.setAngvel(
+        new Vector3().setFromEuler(new Euler().setFromQuaternion(leftHandDelta)).multiplyScalar(1 / world.timestep),
+        true,
+      );
+      const rightHandDelta = rightHandQuaternion.clone().invert().premultiply(
+        rightHand.wrist.value.rotation.clone().multiply(new Quaternion().setFromEuler(new Euler(0, 0, -Math.PI / 2))),
+      );
+      rightHandRef.current.setAngvel(
+        new Vector3().setFromEuler(new Euler().setFromQuaternion(rightHandDelta)).multiplyScalar(1 / world.timestep),
+        true,
+      );
+    }
+  });
+
+  // const joint = useSphericalJoint(rightHandRef, leftHandRef, [
+  //   [
+  //     -HAND_WIDTH,
+  //     0,
+  //     0,
+  //   ],
+  //   [
+  //     HAND_WIDTH,
+  //     0,
+  //     0,
+  //   ],
+  // ]);
   return (
     <>
       <HandRenderer
         ref={rightHandRef}
         hand={rightHand}
         transform={RIGHT_HAND_TRANSFORM}
-        position={new Vector3(0, 2, 0)}
+        position={new Vector3(HAND_WIDTH, 2, 0)}
         movable={true}
         color={new Color('orange')}
       />
@@ -395,7 +432,7 @@ export const PlayerEntityRenderer3 = observer(function ({
         ref={leftHandRef}
         hand={leftHand}
         transform={LEFT_HAND_TRANSFORM}
-        position={new Vector3(0, 2, 0)}
+        position={new Vector3(-HAND_WIDTH, 2, 0)}
         movable={true}
         color={new Color('orange')}
       />
