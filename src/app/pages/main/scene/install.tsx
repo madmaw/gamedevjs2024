@@ -1,3 +1,4 @@
+import { Sky } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 import {
   Physics,
@@ -133,7 +134,7 @@ function Ground() {
             1000,
           ]}
         />
-        <meshStandardMaterial color='pink' />
+        <meshStandardMaterial color='lightgrey' />
       </mesh>
     </RigidBody>
   );
@@ -172,19 +173,21 @@ export function install() {
       },
     );
 
+    const LIGHT_POSITION = new Vector3(3, 10, 2);
+
     return (
       <Canvas
         shadows='soft'
         camera={camera.current}
+        gl={{
+          alpha: false,
+        }}
       >
+        <Sky sunPosition={LIGHT_POSITION} />
         <ambientLight intensity={.5} />
         <directionalLight
           ref={setLight}
-          position={[
-            3,
-            10,
-            0,
-          ]}
+          position={LIGHT_POSITION}
           castShadow={true}
         >
         </directionalLight>

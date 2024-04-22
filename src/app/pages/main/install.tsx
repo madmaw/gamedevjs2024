@@ -1,4 +1,8 @@
-import { Scene as DomainScene } from 'app/domain/scene';
+import {
+  computeCameraDistance,
+  PlayerEntityImpl,
+  Scene as DomainScene,
+} from 'app/domain/scene';
 import {
   type Initializer,
   type Page,
@@ -14,7 +18,9 @@ import {
   usePartialComponent,
   usePartialObserverComponent,
 } from 'base/react/partial';
+import { runInAction } from 'mobx';
 import {
+  useEffect,
   useMemo,
   useState,
 } from 'react';
@@ -61,6 +67,15 @@ export function install({
       // not required? Maybe useRef would be better?
       // setWorld,
     ] = useState(new DomainScene());
+
+    useEffect(function () {
+      const player = new PlayerEntityImpl(scene.nextEntityId++);
+      player.position.z = computeCameraDistance();
+      runInAction(function () {
+        scene.entities.push(player);
+      });
+      // TODO remove player on unmount
+    }, [scene]);
 
     const PlayWithScene = usePartialComponent(function () {
       return {

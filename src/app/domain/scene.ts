@@ -5,6 +5,7 @@ import {
   observable,
 } from 'mobx';
 import {
+  Euler,
   Quaternion,
   Vector3,
 } from 'three';
@@ -107,13 +108,13 @@ export class PlayerEntityImpl extends SimpleEntity<EntityType.Player> implements
   accessor headOffset: Vector3 = new Vector3(0, PLAYER_HEIGHT, 0);
 
   readonly hands: Record<HandKind, Hand> = {
-    [HandKind.Left]: new Hand(
-      new Vector3(-1, 1, 0),
-      new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI / 2),
-    ),
     [HandKind.Right]: new Hand(
       new Vector3(1, 1, 0),
-      new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI / 2),
+      new Quaternion().setFromEuler(new Euler(-Math.PI / 2, 0, Math.PI / 2)),
+    ),
+    [HandKind.Left]: new Hand(
+      new Vector3(-1, 1, 0),
+      new Quaternion().setFromEuler(new Euler(-Math.PI / 2, 0, Math.PI / 2)),
     ),
   };
 

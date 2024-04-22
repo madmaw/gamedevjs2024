@@ -16,10 +16,7 @@ import {
   AsyncPresenter,
 } from 'app/ui/async/presenter';
 import { useAsyncEffect } from 'base/react/async';
-import {
-  createPartialComponent,
-  usePartialObserverComponent,
-} from 'base/react/partial';
+import { usePartialObserverComponent } from 'base/react/partial';
 import { useMemo } from 'react';
 import {
   type Group,
@@ -32,7 +29,6 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { CustomAsync } from 'ui/components/async/custom';
 import fpsHandsUrl from './assets/fps-hands.fbx';
 // import cartoonHandsUrl from './assets/cartoon-hands.fbx';
-import { PlayerEntityRenderer3 } from 'app/pages/main/scene/renderers/player3';
 import { PlayFailure } from './failure';
 import { PlayLoading } from './loading';
 
@@ -118,10 +114,6 @@ export function install({
         object.position.add(offset);
         offsetObject.add(object);
 
-        const EntityRenderer = createPartialComponent(PlayerEntityRenderer3, {
-          debug,
-        });
-        rendererRegistry.registerRendererForEntityType(entityType, EntityRenderer, 1);
         return offsetObject;
       }));
     }, [

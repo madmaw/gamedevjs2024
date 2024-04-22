@@ -4,17 +4,19 @@ import {
 } from 'app/domain/pose';
 import {
   computeCameraDistance,
+  EntityType,
   type Joint,
   PLAYER_HEIGHT,
   type PlayerEntity,
-  PlayerEntityImpl,
   RESERVED_BELOW,
   RESERVED_HEIGHT,
 } from 'app/domain/scene';
 import { type EntityRendererRegistry } from 'app/pages/main/scene/renderer';
+import { PlayerEntityRenderer3 } from 'app/pages/main/scene/renderers/player3';
 import { type CorticalDetectorService } from 'app/services/detector';
 import { exists } from 'base/exists';
 import { type Node } from 'base/graph/types';
+import { createPartialComponent } from 'base/react/partial';
 import { runInAction } from 'mobx';
 import {
   useCallback,
@@ -23,6 +25,7 @@ import {
   useRef,
 } from 'react';
 import {
+  Matrix4,
   Quaternion,
   Vector3,
 } from 'three';
@@ -47,6 +50,11 @@ export function install({
   const Debug = debug ? installDebug() : undefined;
   const Play = installPlay({ Debug });
 
+  const EntityRenderer = createPartialComponent(PlayerEntityRenderer3, {
+    debug,
+  });
+  rendererRegistry.registerRendererForEntityType(EntityType.Player, EntityRenderer, 1);
+
   return installInit({
     corticalDetectorService,
     rendererRegistry,
@@ -63,24 +71,8 @@ function installPlay({ Debug }: { Debug: Play | undefined }) {
     const handleRef = useRef<number | null>(null);
     const thenRef = useRef<number>(0);
     const player = useMemo<PlayerEntity>(function () {
-      const player = new PlayerEntityImpl(
-        scene.nextEntityId++,
-      );
-      player.position.copy(new Vector3(0, 0, computeCameraDistance()));
-      return player;
+      return scene.entities.find(entity => entity.type === EntityType.Player)!;
     }, [scene]);
-
-    useEffect(function () {
-      runInAction(function () {
-        scene.entities.push(
-          player,
-        );
-      });
-      // TODO remove player on unmount
-    }, [
-      scene,
-      player,
-    ]);
 
     useEffect(function () {
       const subscription = corticalStream.subscribe(function ({
@@ -218,7 +210,7 @@ type HandData = {
   jointId: CorticalID,
   crossAxisJointIds: [CorticalID, CorticalID],
   outgoingJointId: CorticalID,
-  scalar: Vector3,
+  transform: Matrix4,
 };
 
 const RIGHT_HAND_DATA: HandData = {
@@ -229,7 +221,7 @@ const RIGHT_HAND_DATA: HandData = {
     CorticalID.RightIndexFingerMCP,
   ],
   outgoingJointId: CorticalID.RightRingFingerMCP,
-  scalar: new Vector3(1, 1, 1),
+  transform: new Matrix4().identity(),
 };
 const LEFT_HAND_DATA: HandData = {
   kind: HandKind.Left,
@@ -239,7 +231,7 @@ const LEFT_HAND_DATA: HandData = {
     CorticalID.LeftPinkyFingerMCP,
   ],
   outgoingJointId: CorticalID.LeftRingFingerMCP,
-  scalar: new Vector3(1, 1, -1),
+  transform: new Matrix4().scale(new Vector3(1, 1, 1)),
 };
 const HANDS = [
   RIGHT_HAND_DATA,
@@ -257,13 +249,13 @@ function applyHandsKeypoints({
       jointId,
       crossAxisJointIds,
       outgoingJointId,
-      scalar,
+      transform,
     } = handData;
     const hand = hands[kind];
-    const joint = keypoints[jointId]?.clone().multiply(scalar);
-    const outgoingJoint = keypoints[outgoingJointId]?.clone().multiply(scalar);
+    const joint = keypoints[jointId]?.clone().applyMatrix4(transform);
+    const outgoingJoint = keypoints[outgoingJointId]?.clone().applyMatrix4(transform);
     const crossAxisJoints = crossAxisJointIds.map((jointId) => {
-      return keypoints[jointId]?.clone().multiply(scalar);
+      return keypoints[jointId]?.clone().applyMatrix4(transform);
     });
     if (
       joint != null
@@ -298,7 +290,7 @@ function applyHandsKeypoints({
           connection,
           handDirection,
           inverseQ,
-          scalar,
+          transform,
         );
       });
       // calculate hand position based on the dimensions of the viewing area and the dimensions of the
@@ -317,7 +309,7 @@ function applyFingerKeypoints(
   currentJoint: Node<Joint>,
   previousDirection: Vector3,
   unrotate: Quaternion,
-  scalar: Vector3,
+  transform: Matrix4,
 ) {
   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   const jointCorticalId = `${kind}_${currentJoint.value.id}` as CorticalID;
@@ -328,9 +320,9 @@ function applyFingerKeypoints(
   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   const nextJointCorticalId = `${kind}_${nextJoint.value.id}` as CorticalID;
 
-  const jointPoint = keypoints[jointCorticalId]?.clone().multiply(scalar);
+  const jointPoint = keypoints[jointCorticalId]?.clone().applyMatrix4(transform);
 
-  const nextJointPoint = keypoints[nextJointCorticalId]?.clone().multiply(scalar);
+  const nextJointPoint = keypoints[nextJointCorticalId]?.clone().applyMatrix4(transform);
   if (jointPoint != null && nextJointPoint != null) {
     const segmentDirection = nextJointPoint.clone().sub(jointPoint).normalize();
     const rotationAxis = previousDirection.clone().cross(segmentDirection).normalize().applyQuaternion(unrotate);
@@ -348,7 +340,7 @@ function applyFingerKeypoints(
         nextJoint,
         segmentDirection,
         unrotate.clone().premultiply(q.clone().invert()),
-        scalar,
+        transform,
       );
     }
   }
