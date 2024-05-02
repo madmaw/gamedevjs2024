@@ -51,6 +51,14 @@ module.exports = {
     sourceType: 'module',
   },
   rules: {
+    // this rule needs to go before the dprint rule as there is a race condition otherwise
+    '@typescript-eslint/consistent-type-imports': [
+      'warn',
+      {
+        prefer: 'type-imports',
+        fixStyle: 'inline-type-imports',
+      },
+    ],
     'dprint-integration/dprint': [
       'error',
       {},
@@ -196,13 +204,6 @@ module.exports = {
       'error',
       {
         additionalHooks: '(usePartialComponent|usePartialObserverComponent|useWhen|useReaction|useAutorun)',
-      },
-    ],
-    '@typescript-eslint/consistent-type-imports': [
-      'warn',
-      {
-        prefer: 'type-imports',
-        fixStyle: 'inline-type-imports',
       },
     ],
     '@typescript-eslint/switch-exhaustiveness-check': ['error'],
